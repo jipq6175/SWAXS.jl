@@ -3,7 +3,7 @@
 
 module SWAXS
 
-using Distributed, DelimitedFile, StatsBase, LinearAlgebra, Statistics, Reexport
+using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Reexport
 
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
@@ -11,8 +11,9 @@ const AFloat = AbstractFloat;
 
 
 
-
-
+export DenSWAXS
+export ShapeSWAXS, readvox, Voxel
+export PDBSWAXS, SimplyPDB
 
 
 
@@ -23,8 +24,10 @@ include("densityswaxs.jl");
 
 
 include("voxel.jl");
-include("dq.jl");
+include("shapeswaxs.jl");
 
+
+include("scattering_form_factor.jl");
 
 
 

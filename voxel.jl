@@ -9,7 +9,7 @@ mutable struct Voxel
 end
 
 
-function readvox(filename::String)
+function readvox(filename::AbstractString)
 
     # initialize the voxel struct
     vox = Voxel(1, 1, zeros(3), 0.0, fill(true, 2), zeros(2,2));
@@ -19,28 +19,28 @@ function readvox(filename::String)
 
     # first line
     line = readline(f);
-    startswith(line, "#binvox")? vox.version = parse(Int64, split(line)[2]): error("Unrecognized .binvox file with line 1: $line.");
+    startswith(line, "#binvox") ? vox.version = parse(Int64, split(line)[2]) : error("Unrecognized .binvox file with line 1: $line.");
 
     # second line
     line = readline(f);
     if startswith(line, "dim")
         p = parse.(Int64, split(line)[2:4]);
-        length(unique(p)) == 1? vox.dim = p[1]: error("Dimensions are different on x, y, z with $p.");
+        length(unique(p)) == 1 ? vox.dim = p[1] : error("Dimensions are different on x, y, z with $p.");
     else
         error("Unrecognized .binvox file with line 2: $line.");
     end
 
     # Third line
     line = readline(f);
-    startswith(line, "translate")? vox.translate = parse.(Float64, split(line)[2:4]): error("Unrecognized .binvox file with line 3: $line.");
+    startswith(line, "translate") ? vox.translate = parse.(Float64, split(line)[2:4]) : error("Unrecognized .binvox file with line 3: $line.");
 
     # Fourth line
     line = readline(f);
-    startswith(line, "scale")? vox.scale = parse(Float64, split(line)[2]): error("Unrecognized .binvox file with line 4: $line.");
+    startswith(line, "scale") ? vox.scale = parse(Float64, split(line)[2]) : error("Unrecognized .binvox file with line 4: $line.");
 
     # Fifth line and ready to read data
     line = readline(f);
-    line != "data"? error("Unrecognized .binvox file with line 5: $line."): nothing; #info("Headers all good.. Ready to read in binary data ...");
+    line != "data" ? error("Unrecognized .binvox file with line 5: $line.") : nothing;
 
     b = UInt8[];
     readbytes!(f, b, Inf);
