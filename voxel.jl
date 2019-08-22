@@ -2,10 +2,10 @@
 mutable struct Voxel
     version::Int64;
     dim::Int64;
-    translate::Vector{Float64};
-    scale::Float64;
-    rawdata::Vector{Bool};
-    coordata::Matrix{Float64};
+    translate::Array{AFloat, 1};
+    scale::AFloat;
+    rawdata::Array{Bool, 1};
+    coordata::Array{AFloat, 2};
 end
 
 
@@ -73,39 +73,4 @@ function readvox(filename::String)
 
     vox.coordata = grid3d[vox.rawdata, :];
     return vox;
-end
-
-
-
-# Voxelize the .obj files or .off files within all the files in a directory
-function voxelizer(dir::String)
-
-    filelist = Vector{String}(0);
-
-    for (root, dirs, files) in walkdir(dir)
-        info("Getting files in $root ...");
-        for file in files
-            push!(filelist, joinpath(root, file));
-        end
-    end
-
-    filelist = filelist[endswith.(filelist, ".obj") .| endswith.(filelist, ".off")];
-
-    info("Starting to voxelize...");
-    n = length(filelist);
-    for i = 1:n
-
-        command = `binvox -d 51 -cb $(filelist[i])`;
-        try
-            tic();
-            run(pipeline(command, stdout="out.log", append=true));
-            t = toq();
-            @printf("%.4f%% (%06d / %06d) \n%s Success, with elapsed time = %.3f s.\n", 100*i/n, i, n, filelist[i], t);
-            # println("($i/$n): $(filelist[i]) Success, with elapsed time = $t s.");
-        catch err
-            warn(@sprintf("%.4f%% (%06d / %06d) \n%s failed. Skipped!!", 100*i/n, i, n, filelist[i]));
-        end
-
-    end
-
 end
