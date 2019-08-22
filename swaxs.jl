@@ -1,3 +1,10 @@
-#swaxs.jl
+# sawxs module
 
-# setting up user's environment
+
+module SWAXS
+
+using Distributed, DelimitedFile, StatsBase, LinearAlgebra
+
+
+
+end  # module SWAXS
