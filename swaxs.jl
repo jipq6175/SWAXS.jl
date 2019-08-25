@@ -27,7 +27,7 @@ include("voxel.jl");
 include("shapeswaxs.jl");
 
 
-include("scattering_form_factor.jl");
+#include("scattering_form_factor.jl");
 
 
 
