@@ -8,12 +8,12 @@ using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Reexpor
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
 const AFloat = AbstractFloat;
+const AS = AbstractString;
 
 
 
 export DenSWAXS
-export ShapeSWAXS, readvox, Voxel
-export PDBSWAXS, SimplyPDB
+#export PDBSWAXS, SimplyPDB, AtomAFF
 
 
 
@@ -21,10 +21,6 @@ export PDBSWAXS, SimplyPDB
 include("mrc.jl");
 @reexport using .MRC
 include("densityswaxs.jl");
-
-
-include("voxel.jl");
-include("shapeswaxs.jl");
 
 
 #include("scattering_form_factor.jl");

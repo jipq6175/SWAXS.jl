@@ -13,11 +13,13 @@ nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : add
 @everywhere include("swaxs.jl");
 @everywhere using .SWAXS
 
-q = collect(0.0:0.002:1.4);
+q = collect(0.0:0.02:1.0);
 
-#m = mrc_reader("..\\swaxs_testdata\\dna_denss1.mrc");
-#@time DenSWAXS(m, q);
+# m = mrc_reader("..\\swaxs_testdata\\dna_denss1.mrc");
+# @time DenSWAXS(m, q);
+
+
+
 
 v = readvox("..\\swaxs_testdata\\cat.binvox");
 @time intensity = ShapeSWAXS(v, 1.0, q);
-writedlm(".\\swaxs_testdata\\cat.dat", [q intensity 0.02 * intensity]);

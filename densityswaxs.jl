@@ -31,7 +31,7 @@ function DenSWAXS(m::mrc, q::AVec; density_cutoff::Float64=1e-3, J::Int64=1200, 
     solventden = sden * spacing ^ 3;
 
     d = reshape(m.data, (m.nx*m.ny*m.nz, ));
-    idx = findall(d .> density_cutoff);
+    idx = findall((d .>= density_cutoff) .| (d .<= -density_cutoff));
     mat = m.gridposition[idx, :];
 
     intensity = pmap(x -> _DQ(mat, d[idx], x; sd=solventden, J=J), q, distributed=true);

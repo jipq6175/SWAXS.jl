@@ -20,11 +20,11 @@ julia> @time SimplyPDB(solutefile)
 ```
 
 """
-function SimplyPDB(filename::String, atomnames::Vector{String}=["H", "C", "N", "O", "NA", "MG", "P", "CL", "K"]; waters::Bool=true, ions::Bool=true)
+function SimplyPDB(filename::AS, atomnames::Array{String, 1}=["H", "C", "N", "O", "NA", "MG", "P", "CL", "K"]; waters::Bool=true, ions::Bool=true)
 
     # Some residues to worry about
-    const IONS = ["CIP"; "K+"; "NA+"; "MG+"];
-    const SOL = ["SOL"; "WAT"; "HOH"];
+    IONS = ["CIP"; "K+"; "NA+"; "MG+"];
+    SOL = ["SOL"; "WAT"; "HOH"];
 
     # Read pdb file
     f = open(filename, "r");
@@ -37,11 +37,11 @@ function SimplyPDB(filename::String, atomnames::Vector{String}=["H", "C", "N", "
     # trying to locate the coordinates
     sp = split(atoms[1]);
     index = collect(1:length(sp));
-    id = index[typeof.(parse.(sp)) .== Float64][1];
+    id = index[typeof.(parse.(Float64, sp)) .== Float64][1];
 
     # forming the debye matrix
-    mat = Matrix{Float64}(0, 3);
-    atomid = Vector{String}(0);
+    mat = Array{Float64, 2}(undef, 0, 3);
+    atomid = Array{String, 1}(undef, 0);
     for i = 1:n
         sp = convert.(String, split(atoms[i]));
         # Check waters
@@ -52,7 +52,7 @@ function SimplyPDB(filename::String, atomnames::Vector{String}=["H", "C", "N", "
             end
         elseif (sp[4] in SOL)
             if waters
-                push!(atomid, "SOL-"*atom_identify(sp[3]));
+                push!(atomid, "SOL-" * atom_identify(sp[3]));
                 mat = vcat(mat, parse.(sp[id:id+2])');
             end
         else
@@ -83,7 +83,7 @@ julia> atom_identify("2H5'")
 
 """
 function atom_identify(atom::String)
-    const ATOM = ["H", "C", "N", "O", "NA", "MG", "P", "CL", "K"];
+    ATOM = ["H", "C", "N", "O", "NA", "MG", "P", "CL", "K"];
     at = split(atom, "");
     id = find([x in ATOM for x in at])[1];
     return convert(String, at[id]);
@@ -172,34 +172,34 @@ end
 
 
 # # Calculate 3D averaged scattering amplitude at one fixed q::Float64
-# function DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::T; J::Int64=1500) where T<:Real
-#
-#     # Prior procedure
-#     # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
-#     atomidA, pdbmatA = sysA;
-#     atomidB, pdbmatB = sysB;
-#     atomaffA = AtomAFF(atomidA, q);
-#     atomaffB = AtomAFF(atomidB, q);
-#
-#     # Generate J q vectors
-#     x = [(2*j - 1 - J)/J for j = 1:J];
-#     theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
-#     qmat = q .*[sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
-#
-#     # Calculate A, B, D
-#     qrA = pdbmatA * qmat';
-#     qrB = pdbmatB * qmat';
-#     A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
-#     B = [atomaffB' * cos.(qrB); -atomaffB' * sin.(qrB)];
-#
-#     # Form factor difference across J q vectors
-#     d = A .- B;
-#
-#     # Find the average of the |A-B|^2
-#     D = mean(sum(d.^2, 1));
-#
-#     return D;
-# end
+function _DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::T; J::Int64=1500) where T<:Real
+
+    # Prior procedure
+    # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
+    atomidA, pdbmatA = sysA;
+    atomidB, pdbmatB = sysB;
+    atomaffA = AtomAFF(atomidA, q);
+    atomaffB = AtomAFF(atomidB, q);
+
+    # Generate J q vectors
+    x = [(2*j - 1 - J)/J for j = 1:J];
+    theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
+    qmat = q * [sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
+
+    # Calculate A, B, D
+    qrA = pdbmatA * qmat';
+    qrB = pdbmatB * qmat';
+    A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
+    B = [atomaffB' * cos.(qrB); -atomaffB' * sin.(qrB)];
+
+    # Form factor difference across J q vectors
+    d = A .- B;
+
+    # Find the average of the |A-B|^2
+    D = mean(sum(d.^2, dims=1));
+
+    return D;
+end
 
 
 ######################################################################
@@ -248,7 +248,7 @@ julia> @time SWAXS(SimplyPDB(solutefile), SimplyPDB(solventfile), q)
 ```
 
 """
-function SWAXS(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::Vector{T}; J::Int64=1500, npr::Int64=7) where T<:Real
+function PDBSWAXS(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::Vector{T}; J::Int64=1500, npr::Int64=7) where T<:Real
 
     # Setting up the parallel environment
     # info("=====   Setting up parallel environment   =====");
@@ -257,52 +257,9 @@ function SWAXS(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{
     else
         nothing;
     end
-    # eval(macroexpand(quote @everywhere using DistributedArrays end));
-
-    # Include self everywhere
-    @everywhere include("scattering_form_factor.jl");
-    @eval @everywhere JJ = $J;
-
-    ####################################
-    # Creat a function for pmap later
-    @everywhere function DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::T; J::Int64=JJ) where T<:Real
-
-        # Prior procedure
-        # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
-        atomidA, pdbmatA = sysA;
-        atomidB, pdbmatB = sysB;
-        atomaffA = AtomAFF(atomidA, q);
-        atomaffB = AtomAFF(atomidB, q);
-
-        # Generate J q vectors
-        x = [(2*j - 1 - J)/J for j = 1:J];
-        theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
-        qmat = q .*[sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
-
-        # Calculate A, B, D
-        qrA = pdbmatA * qmat';
-        qrB = pdbmatB * qmat';
-        A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
-        B = [atomaffB' * cos.(qrB); -atomaffB' * sin.(qrB)];
-
-        # Form factor difference across J q vectors
-        d = A .- B;
-
-        # Find the average of the |A-B|^2
-        D = mean(sum(d.^2, 1));
-
-        return D;
-    end
-    ###################################
 
     # Compute the scattering profile using pmap
-    tic();
-    intensity = pmap(x -> DQ(sysA, sysB, x), q);
-    toc();
-
-    # Remove all the workers
-    # info("=====   Remove $(nprocs()-1) parallel workers   =====");
-    # rmprocs(workers());
+    intensity = pmap(x -> _DQ(sysA, sysB, x; J=J), q, distributed=true);
 
     return intensity;
 
@@ -310,127 +267,127 @@ end
 
 
 
-######################################################################
-## Evaluating Scattering Profile using Parallel computation         ##
-## Use an ENSEMBLE of structures to compute the scattering profiles ##
-######################################################################
-"""
-    intensity = EnSWAXS(soluteseries, solventseries, q::Vector{Float64}; J=1500, npr=7)
-
-Accurately compute the solution X-ray scattering profile of multiple macromolecular states, `soluteseries` and the corresponding solvent conditions, `solventseries` using the Park et al. formalism.
-
-`soluteseries::Vector{String}` is a vector of solute pdbs and `solventseries::Vector{String}` is a vector of solvent pdbs.
-
-`q`, `J` and `npr` follow the same convention of the function `SWAXS()`.
-
-The formalism is exactly the same. The following is how `EnSWAXS()` does the ensemble average.
-
-``
-I(q) = \\langle \\langle D(\\mathbf{q}) \\rangle_E \\rangle_\\Omega = \\frac{1}{4\\pi}\\int \\left[ \\frac{1}{E}\\sum_{k=1}^E D_k(\\mathbf{q}) \\right]\\sin{\\theta}d\\theta d\\phi
-``
-
-``
-I(q) = \\frac{1}{E}\\sum_{k=1}^E \\frac{1}{4\\pi} \\int D_k(\\mathbf{q})\\sin{\\theta}d\\theta d\\phi = \\langle \\langle D(\\mathbf{q}) \\rangle_\\Omega \\rangle_E
-``
-
-So essentially, the ensemble average is the average of all scattering profiles in the ensemble.
-``
-I(q) = \\frac{1}{E} \\sum_{k=1}^E I_k(q)
-``
-
-# Benchmarks
-
-```julia-repl
-julia> length(soluteseries), length(solventseries)
-(12, 12)
-julia> q = collect(0.0:0.01:0.95);
-julia> @time EnSWAXS(soluteseries, solventseries, q)
-INFO: =====   Deal with the series of PDB files   =====
-INFO: =====   Calculating the Scattering Intensity   =====
-elapsed time: 327.045976352
-INFO: =====   Wrapping up the computations   =====
-> Float64[96]
-```
-
-# Notes
-1. At this point, since the `EnSWAXS()` is the average of all scattering profiles from an ensemble, it might be a little bit computationally efficient to use `SWAXS()` and average all the profiles. But the time difference is about 1 second per structure.
-
-"""
-function EnSWAXS(soluteseries::Vector{String}, solventseries::Vector{String}, q::Vector{T}; J::Int64=1500, npr::Int64=7) where T<:Real
-
-    # Setting up the parallel environment
-    # info("=====   Setting up parallel environment   =====");
-    if nprocs() != npr
-        nprocs() > npr ? rmprocs(workers()[end-(nprocs()-npr)+1:end]) : addprocs(npr-nprocs());
-    else
-        nothing;
-    end
-
-    # Include self everywhere
-    @everywhere include("scattering_form_factor.jl");
-    @eval @everywhere JJ = $J;
-
-    # Deal wih all the files and coordinates
-    info("=====   Deal with the series of PDB files   =====");
-    sysA = map(x -> SimplyPDB(x), soluteseries);
-    sysB = map(x -> SimplyPDB(x), solventseries);
-    N = length(sysA);
-
-    @eval @everywhere sysA_atomids = $([sysA[i][1] for i = 1:N]);
-    @eval @everywhere sysA_pdbmats = $([sysA[i][2] for i = 1:N]);
-    @eval @everywhere sysB_atomids = $([sysB[i][1] for i = 1:N]);
-    @eval @everywhere sysB_pdbmats = $([sysB[i][2] for i = 1:N]);
-
-
-    # Given one value of q
-    # Create a function for pmap
-    @everywhere function EnDQ(sysA_atomids::Vector{Array{String,1}}, sysA_pdbmats::Vector{Array{T,2}}, sysB_atomids::Vector{Array{String,1}}, sysB_pdbmats::Vector{Array{T,2}}, q::T; J::Int64=JJ) where T<:Real
-
-        # number of ensembles
-        n = length(sysA_atomids);
-        D = zeros(J, n);
-
-        # Convert the atom ids to atom affs
-        sysA_atomaffs = AtomAFF.(sysA_atomids, q);
-        sysB_atomaffs = AtomAFF.(sysB_atomids, q);
-
-        # Create J evenly spaced q vectors
-        x = [(2*j - 1 - J)/J for j = 1:J];
-        theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
-        qmat = q .*[sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
-
-        A = zeros(2, J, n);
-        B = zeros(2, J, n);
-
-        for k = 1:n
-
-            # Calculate A, B, D
-            # print(sysA_pdbmats[k]);
-            qrA = sysA_pdbmats[k] * qmat';
-            qrB = sysB_pdbmats[k] * qmat';
-            A = [sysA_atomaffs[k]' * cos.(qrA); -sysA_atomaffs[k]' * sin.(qrA)];
-            B = [sysB_atomaffs[k]' * cos.(qrB); -sysB_atomaffs[k]' * sin.(qrB)];
-
-            # Form factor difference across J q vectors
-            # Note that |<Z>|^2 ~= <|Z|^2> need to account for that
-            d = A - B;
-
-            # Find the average of the |A-B|^2
-            D[:, k] = transpose(sum(d.^2, 1));
-        end
-        # AB = A .- B;
-        # D = mean(sum(A.^2, 1), 3)[1, :, 1] - mean(sum(B.^2, 1), 3)[1, :, 1] + 2 * sum( mean(B, 3) .* mean(AB, 3), 1)[1, :, 1];
-
-        intensity = mean(D);
-        return intensity;
-    end
-
-    info("=====   Calculating the Scattering Intensity   =====");
-    tic();
-    intensity = pmap(x -> EnDQ(sysA_atomids, sysA_pdbmats, sysB_atomids, sysB_pdbmats, x), q);
-    toc();
-
-    info("=====   Wrapping up the computations   =====");
-    return intensity;
-
-end
+# ######################################################################
+# ## Evaluating Scattering Profile using Parallel computation         ##
+# ## Use an ENSEMBLE of structures to compute the scattering profiles ##
+# ######################################################################
+# """
+#     intensity = EnSWAXS(soluteseries, solventseries, q::Vector{Float64}; J=1500, npr=7)
+#
+# Accurately compute the solution X-ray scattering profile of multiple macromolecular states, `soluteseries` and the corresponding solvent conditions, `solventseries` using the Park et al. formalism.
+#
+# `soluteseries::Vector{String}` is a vector of solute pdbs and `solventseries::Vector{String}` is a vector of solvent pdbs.
+#
+# `q`, `J` and `npr` follow the same convention of the function `SWAXS()`.
+#
+# The formalism is exactly the same. The following is how `EnSWAXS()` does the ensemble average.
+#
+# ``
+# I(q) = \\langle \\langle D(\\mathbf{q}) \\rangle_E \\rangle_\\Omega = \\frac{1}{4\\pi}\\int \\left[ \\frac{1}{E}\\sum_{k=1}^E D_k(\\mathbf{q}) \\right]\\sin{\\theta}d\\theta d\\phi
+# ``
+#
+# ``
+# I(q) = \\frac{1}{E}\\sum_{k=1}^E \\frac{1}{4\\pi} \\int D_k(\\mathbf{q})\\sin{\\theta}d\\theta d\\phi = \\langle \\langle D(\\mathbf{q}) \\rangle_\\Omega \\rangle_E
+# ``
+#
+# So essentially, the ensemble average is the average of all scattering profiles in the ensemble.
+# ``
+# I(q) = \\frac{1}{E} \\sum_{k=1}^E I_k(q)
+# ``
+#
+# # Benchmarks
+#
+# ```julia-repl
+# julia> length(soluteseries), length(solventseries)
+# (12, 12)
+# julia> q = collect(0.0:0.01:0.95);
+# julia> @time EnSWAXS(soluteseries, solventseries, q)
+# INFO: =====   Deal with the series of PDB files   =====
+# INFO: =====   Calculating the Scattering Intensity   =====
+# elapsed time: 327.045976352
+# INFO: =====   Wrapping up the computations   =====
+# > Float64[96]
+# ```
+#
+# # Notes
+# 1. At this point, since the `EnSWAXS()` is the average of all scattering profiles from an ensemble, it might be a little bit computationally efficient to use `SWAXS()` and average all the profiles. But the time difference is about 1 second per structure.
+#
+# """
+# function EnSWAXS(soluteseries::Vector{String}, solventseries::Vector{String}, q::Vector{T}; J::Int64=1500, npr::Int64=7) where T<:Real
+#
+#     # Setting up the parallel environment
+#     # info("=====   Setting up parallel environment   =====");
+#     if nprocs() != npr
+#         nprocs() > npr ? rmprocs(workers()[end-(nprocs()-npr)+1:end]) : addprocs(npr-nprocs());
+#     else
+#         nothing;
+#     end
+#
+#     # Include self everywhere
+#     @everywhere include("scattering_form_factor.jl");
+#     @eval @everywhere JJ = $J;
+#
+#     # Deal wih all the files and coordinates
+#     info("=====   Deal with the series of PDB files   =====");
+#     sysA = map(x -> SimplyPDB(x), soluteseries);
+#     sysB = map(x -> SimplyPDB(x), solventseries);
+#     N = length(sysA);
+#
+#     @eval @everywhere sysA_atomids = $([sysA[i][1] for i = 1:N]);
+#     @eval @everywhere sysA_pdbmats = $([sysA[i][2] for i = 1:N]);
+#     @eval @everywhere sysB_atomids = $([sysB[i][1] for i = 1:N]);
+#     @eval @everywhere sysB_pdbmats = $([sysB[i][2] for i = 1:N]);
+#
+#
+#     # Given one value of q
+#     # Create a function for pmap
+#     @everywhere function EnDQ(sysA_atomids::Vector{Array{String,1}}, sysA_pdbmats::Vector{Array{T,2}}, sysB_atomids::Vector{Array{String,1}}, sysB_pdbmats::Vector{Array{T,2}}, q::T; J::Int64=JJ) where T<:Real
+#
+#         # number of ensembles
+#         n = length(sysA_atomids);
+#         D = zeros(J, n);
+#
+#         # Convert the atom ids to atom affs
+#         sysA_atomaffs = AtomAFF.(sysA_atomids, q);
+#         sysB_atomaffs = AtomAFF.(sysB_atomids, q);
+#
+#         # Create J evenly spaced q vectors
+#         x = [(2*j - 1 - J)/J for j = 1:J];
+#         theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
+#         qmat = q .*[sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
+#
+#         A = zeros(2, J, n);
+#         B = zeros(2, J, n);
+#
+#         for k = 1:n
+#
+#             # Calculate A, B, D
+#             # print(sysA_pdbmats[k]);
+#             qrA = sysA_pdbmats[k] * qmat';
+#             qrB = sysB_pdbmats[k] * qmat';
+#             A = [sysA_atomaffs[k]' * cos.(qrA); -sysA_atomaffs[k]' * sin.(qrA)];
+#             B = [sysB_atomaffs[k]' * cos.(qrB); -sysB_atomaffs[k]' * sin.(qrB)];
+#
+#             # Form factor difference across J q vectors
+#             # Note that |<Z>|^2 ~= <|Z|^2> need to account for that
+#             d = A - B;
+#
+#             # Find the average of the |A-B|^2
+#             D[:, k] = transpose(sum(d.^2, 1));
+#         end
+#         # AB = A .- B;
+#         # D = mean(sum(A.^2, 1), 3)[1, :, 1] - mean(sum(B.^2, 1), 3)[1, :, 1] + 2 * sum( mean(B, 3) .* mean(AB, 3), 1)[1, :, 1];
+#
+#         intensity = mean(D);
+#         return intensity;
+#     end
+#
+#     info("=====   Calculating the Scattering Intensity   =====");
+#     tic();
+#     intensity = pmap(x -> EnDQ(sysA_atomids, sysA_pdbmats, sysB_atomids, sysB_pdbmats, x), q);
+#     toc();
+#
+#     info("=====   Wrapping up the computations   =====");
+#     return intensity;
+#
+# end
