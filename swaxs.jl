@@ -13,7 +13,7 @@ const AS = AbstractString;
 
 
 export DenSWAXS
-#export PDBSWAXS, SimplyPDB, AtomAFF
+export PDBSWAXS, SimplyPDB, AtomAFF
 
 
 
@@ -22,7 +22,7 @@ include("mrc.jl");
 @reexport using .MRC
 include("densityswaxs.jl");
 
-
+include("pdbswaxs.jl");
 #include("scattering_form_factor.jl");
 
 

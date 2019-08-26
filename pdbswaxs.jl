@@ -215,16 +215,67 @@ const COEFS = Dict{String, Array{Float64, 1}}(
 "Cf" => [36.9185, 25.1995, 18.3317, 4.24391, 0.437533, 3.00775, 12.4044, 83.7881, 13.2674]);
 
 
+function AtomAFF(atomid::Array{String, 1}, q::T; coefs::Dict{String, Array{Float64, 1}}=COEFS) where T<:Real
+
+    uniqueid = unique(atomid);
+    idx = [id in collect(keys(coefs)) for id in uniqueid];
+    uniqueid = uniqueid[idx];
+    s = q/(4*pi);
+    asf = Dict{String, Float64}();
+
+    for id in uniqueid
+        a, b, c = coefs[id][1:4], coefs[id][5:8], coefs[id][9];
+        fq = c + a' * exp.(-b * s^2);
+        merge!(asf, Dict{String, Float64}(id => fq));
+    end
+
+    # Deal with the water O and H
+    fo = asf["O"] * (1. + 0.12 * exp(-0.5 * (q / 2.2) ^ 2));
+    fh = asf["H"] * (1. - 0.48 * exp(-0.5 * (q / 2.2) ^ 2));
+    merge!(asf, Dict{String, Float64}("SOL-O" => fo, "SOL-H" => fh));
+
+    # convert all the atoms to the ASFs
+    n = length(atomid);
+    atomaff = zeros(n);
+    [atomaff[i] = asf[atomid[i]] for i = 1:n];
+
+    return atomaff;
+end
 
 
 
+
+
+
+
+
+function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, waters::Bool=true, ions::Bool=true)
+
+    # Some residues to worry about
+
+    atomnames = collect(keys(coefs));
+    IONS = atomnames[endswith.(atomnames, "+") .| endswith.(atomnames, "-")];
+    SOL = ["SOL"; "WAT"; "HOH"];
+
+    # Read pdb file
+    f = open(filename, "r");
+    lines = readlines(f);
+    close(f);
+
+    atoms = lines[startswith.(lines, "ATOM")];
+    n = length(atoms);
+
+    # trying to locate the coordinates
+    sp = split(atoms[1]);
+    id = 0;
+    for s in sp
+        id = id + 1;
 
 
 
 
 # multi dispatch of _DQ
 # # Calculate 3D averaged scattering amplitude at one fixed q::Float64
-function _DQ(sysA::Tuple{Array{String,1],Array{Float64,2}], sysB::Tuple{Array{String,1],Array{Float64,2}], q::T; J::Int64=1500) where T<:Real
 
     # Prior procedure
     # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
@@ -257,11 +308,9 @@ end
 
 
 
-function PDBSWAXS(sysA::Tuple{Array{String,1], Array{Float64,2}], sysB::Tuple{Array{String,1], Array{Float64,2}], q::AVect; J::Int64=1500) where T<:Real
 
 
     # Compute the scattering profile using pmap
-    intensity = pmap(x -> _DQ(sysA, sysB, x; J=J), q, distributed=true);
 
     return intensity;
 
