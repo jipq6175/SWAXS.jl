@@ -8,6 +8,15 @@ Possible compatible file formats:
 3. 3D electron density map; `.mrc` or `.map`. Buffer subtraction will be implemented.
 
 
+## Required Packages
+
+1. ArgParse.jl
+2. DelimitedFiles.jl
+3. LinearAlgebra.jl
+4. Statistics.jl
+5. Reexport.jl
+
+
 ## Usage
 
 Run `julia swaxs.jl --help`.
@@ -41,7 +50,7 @@ optional arguments:
 
 ## Examples
 
-1. Calculating from single `.pdb` file containing atomic-coordinates: `rna.pdb`
+### 1. Calculating from single `.pdb` file containing atomic-coordinates: `rna.pdb`
 
    The `rna.pdb` file contains about 10000 atoms.
    Run
@@ -62,7 +71,7 @@ julia -O 3 --color=yes swaxs.jl --pdb rna.pdb -J 1500 0.0 0.01 1.0 -o test
    And the swaxs profile from `q = 0.0` to `q = 1.0` with spacing `0.01` is saved as `test.dat`.
 
 
-2. Calculating from a pair of `.pdb` files to account for buffer subtraction: `solute.pdb` and `solvent.pdb`
+### 2. Calculating from a pair of `.pdb` files to account for buffer subtraction: `solute.pdb` and `solvent.pdb`
 
    Each of the `.pdb` file contains about 9000 atoms.
    Run
@@ -83,7 +92,7 @@ julia -O 3 --color=yes swaxs.jl --solute solute.pdb --solvent solvent.pdb -J 150
 
 
 
-3. Calculating from CCP4 3D electron density map `.mrc` or `.map` files: `den.mrc`
+### 3. Calculating from CCP4 3D electron density map `.mrc` or `.map` files: `den.mrc`
 
    The `den.mrc` contains 96x96x96 volumetric data and is considered to be the Excessive Density
    Run
@@ -109,5 +118,6 @@ julia -O 3 --color=yes swaxs.jl --density den.mrc -s 0.335 -c 0.001 -J 1500 0.0 
 
 1. The options `--pdb`, `--density` and `--solute --solvent` cannot not be specified at the same time.
 2. If high-throughput computation is required, one should bypassing the commandline because it sets up parallel workers everytime. To avoid that, set up your parallel workers and call `@everywhere include("swaxs_module.jl")` and `@everywhere using .SWAXS` in your julia script.
-3. If your structures contain too many atoms or voxels, I suggest you to take a look at GPUSWAXS. 
-4. Not sure if I will maintain this or not.
+3. If your structures contain too many atoms or voxels, I suggest you to take a look at GPUSWAXS.
+4. The atmo-name processor might be a little bit buggy, I will try to fix some of the parsing issues.
+5. Not sure if I will maintain this or not in the future ...
