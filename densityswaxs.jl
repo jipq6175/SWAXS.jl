@@ -1,11 +1,18 @@
 
 
-function _DQ(mat::AMat, d::AVec, q::AFloat; J::Int64=1200, sd::Float64=0.335)
-
-    n = length(d);
+function _Orie(q::AFloat, J::Signed)
     x = [(2*j - 1 - J)/J for j = 1:J];
     theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
     qmat = q * [sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
+    return qmat;
+end
+
+
+
+function _DQ(mat::AMat, d::AVec, q::AFloat; J::Int64=1200, sd::Float64=0.335)
+
+    n = length(d);
+    qmat = _Orie(q, J);
 
     qr = mat * qmat';
     A = cos.(qr);
@@ -17,9 +24,7 @@ function _DQ(mat::AMat, d::AVec, q::AFloat; J::Int64=1200, sd::Float64=0.335)
     solvent = sd * [sv' * A; -sv' * B];
     subtracted = solute .- solvent;
     D = mean(sum((subtracted).^2, dims=1));
-
     return D;
-
 end
 
 
@@ -35,6 +40,5 @@ function DenSWAXS(m::mrc, q::AVec; density_cutoff::Float64=1e-3, J::Int64=1200, 
     mat = m.gridposition[idx, :];
 
     intensity = pmap(x -> _DQ(mat, d[idx], x; sd=solventden, J=J), q, distributed=true);
-
     return intensity;
 end

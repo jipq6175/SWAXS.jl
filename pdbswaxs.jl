@@ -215,12 +215,20 @@ const COEFS = Dict{String, Array{Float64, 1}}(
 "Cf" => [36.9185, 25.1995, 18.3317, 4.24391, 0.437533, 3.00775, 12.4044, 83.7881, 13.2674]);
 
 
-function AtomAFF(atomid::Array{String, 1}, q::T; coefs::Dict{String, Array{Float64, 1}}=COEFS) where T<:Real
+const TAA = Tuple{Array{String,1},Array{Float64,2}};
+const AFT = typeof(COEFS);
+
+
+function AtomAFF(atomid::Array{String, 1}, q::AFloat; coefs::AFT=COEFS)
 
     uniqueid = unique(atomid);
     idx = [id in collect(keys(coefs)) for id in uniqueid];
     uniqueid = uniqueid[idx];
     s = q/(4*pi);
+
+    "O" in uniqueid ? nothing : push!(uniqueid, "O");
+    "H" in uniqueid ? nothing : push!(uniqueid, "H");
+
     asf = Dict{String, Float64}();
 
     for id in uniqueid
@@ -229,7 +237,7 @@ function AtomAFF(atomid::Array{String, 1}, q::T; coefs::Dict{String, Array{Float
         merge!(asf, Dict{String, Float64}(id => fq));
     end
 
-    # Deal with the water O and H
+    # For solvent
     fo = asf["O"] * (1. + 0.12 * exp(-0.5 * (q / 2.2) ^ 2));
     fh = asf["H"] * (1. - 0.48 * exp(-0.5 * (q / 2.2) ^ 2));
     merge!(asf, Dict{String, Float64}("SOL-O" => fo, "SOL-H" => fh));
@@ -238,7 +246,6 @@ function AtomAFF(atomid::Array{String, 1}, q::T; coefs::Dict{String, Array{Float
     n = length(atomid);
     atomaff = zeros(n);
     [atomaff[i] = asf[atomid[i]] for i = 1:n];
-
     return atomaff;
 end
 
@@ -248,10 +255,7 @@ end
 
 
 
-
-function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, waters::Bool=true, ions::Bool=true)
-
-    # Some residues to worry about
+function SimplyPDB(filename::AS; coefs::AFT=COEFS, waters::Bool=true, ions::Bool=true)::TAA
 
     atomnames = collect(keys(coefs));
     IONS = atomnames[endswith.(atomnames, "+") .| endswith.(atomnames, "-")];
@@ -261,7 +265,6 @@ function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, w
     f = open(filename, "r");
     lines = readlines(f);
     close(f);
-
     atoms = lines[startswith.(lines, "ATOM")];
     n = length(atoms);
 
@@ -291,7 +294,6 @@ function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, w
     atomid = Array{String, 1}(undef, 0);
     for i = 1:n
         sp = convert.(String, split(atoms[i]));
-        # Check waters
         if (sp[4] in IONS)
             if ions
                 push!(atomid, sp[4]);
@@ -304,7 +306,6 @@ function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, w
             end
         else
             push!(atomid, "" * sp[end]);
-            # Avoid the "RX N" residues generated from the
             mat = vcat(mat, parse.(Float64, sp[id:id+2])');
         end
     end
@@ -315,20 +316,14 @@ end
 
 
 # multi dispatch of _DQ
-# # Calculate 3D averaged scattering amplitude at one fixed q::Float64
-function _DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::T; J::Int64=1500) where T<:Real
+function _DQ(sysA::TAA, sysB::TAA, q::AFloat; J::Int64=1500)
 
-    # Prior procedure
-    # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
     atomidA, pdbmatA = sysA;
     atomidB, pdbmatB = sysB;
     atomaffA = AtomAFF(atomidA, q);
     atomaffB = AtomAFF(atomidB, q);
 
-    # Generate J q vectors
-    x = [(2*j - 1 - J)/J for j = 1:J];
-    theta, phi = acos.(x), sqrt(pi*J)*asin.(x);
-    qmat = q * [sin.(theta) .* cos.(phi) sin.(theta) .* sin.(phi) cos.(theta)];
+    qmat = _Orie(q, J);
 
     # Calculate A, B, D
     qrA = pdbmatA * qmat';
@@ -336,10 +331,7 @@ function _DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{St
     A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
     B = [atomaffB' * cos.(qrB); -atomaffB' * sin.(qrB)];
 
-    # Form factor difference across J q vectors
     d = A .- B;
-
-    # Find the average of the |A-B|^2
     D = mean(sum(d.^2, dims=1));
 
     return D;
@@ -347,16 +339,42 @@ end
 
 
 
+# multi dispatch of _DQ
+function _DQ(sysA::TAA, q::AFloat; J::Int64=1500)
+
+    atomidA, pdbmatA = sysA;
+    atomaffA = AtomAFF(atomidA, q);
+
+    qmat = _Orie(q, J);
+
+    # Calculate A, B, D
+    qrA = pdbmatA * qmat';
+    A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
+
+    D = mean(sum(A.^2, dims=1));
+
+    return D;
+end
 
 
-function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500) where T<:Real
+
+
+function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500)
 
     solute = SimplyPDB(solutefn);
     solvent = SimplyPDB(solventfn);
 
-    # Compute the scattering profile using pmap
     intensity = pmap(x -> _DQ(solute, solvent, x; J=J), q, distributed=true);
-
     return intensity;
+end
 
+
+
+
+
+function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500)
+    pdb = SimplyPDB(pdbfn);
+
+    intensity = pmap(x -> _DQ(pdb, x; J=J), q, distributed=true);
+    return intensity;
 end
