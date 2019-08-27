@@ -1,5 +1,6 @@
 # sawxs module
 
+__precompile__();
 
 module SWAXS
 
