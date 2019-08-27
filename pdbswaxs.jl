@@ -270,12 +270,53 @@ function SimplyPDB(filename::AS; coefs::Dict{String, Array{Float64, 1}}=COEFS, w
     id = 0;
     for s in sp
         id = id + 1;
+        try parse(Int64, s)
+            continue;
+        catch er1
+            if isa(er1, ArgumentError)
+                try parse(Float64, s)
+                    break;
+                catch er2
+                    isa(er2, ArgumentError) ? continue : throw(er2);
+                end
+            else
+                throw(er1);
+            end
+        end
+    end
+
+
+    # forming the debye matrix
+    mat = Array{Float64, 2}(undef, 0, 3);
+    atomid = Array{String, 1}(undef, 0);
+    for i = 1:n
+        sp = convert.(String, split(atoms[i]));
+        # Check waters
+        if (sp[4] in IONS)
+            if ions
+                push!(atomid, sp[4]);
+                mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+            end
+        elseif (sp[4] in SOL)
+            if waters
+                push!(atomid, "SOL-" * sp[end]);
+                mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+            end
+        else
+            push!(atomid, "" * sp[end]);
+            # Avoid the "RX N" residues generated from the
+            mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+        end
+    end
+    return atomid, mat;
+end
 
 
 
 
 # multi dispatch of _DQ
 # # Calculate 3D averaged scattering amplitude at one fixed q::Float64
+function _DQ(sysA::Tuple{Array{String,1},Array{Float64,2}}, sysB::Tuple{Array{String,1},Array{Float64,2}}, q::T; J::Int64=1500) where T<:Real
 
     # Prior procedure
     # Given one q value, we only need to use AtomAFF() twice, for solute & solvant
@@ -308,9 +349,13 @@ end
 
 
 
+function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500) where T<:Real
 
+    solute = SimplyPDB(solutefn);
+    solvent = SimplyPDB(solventfn);
 
     # Compute the scattering profile using pmap
+    intensity = pmap(x -> _DQ(solute, solvent, x; J=J), q, distributed=true);
 
     return intensity;
 
