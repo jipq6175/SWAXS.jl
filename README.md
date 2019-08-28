@@ -125,14 +125,14 @@ julia -O 3 --color=yes swaxs.jl --density den.mrc -s 0.335 -c 0.001 -J 1500 0.0 
 
 ### 4. Calculating from 3D shape with dummy voxels: `cat.binvox`
 
-      The `cat.binvox` contains 51x51x51 volumetric data with a grid size of `2A` and is considered to be the 3D cat shape with Excessive Density `0.5 e/A^3`.
-      Run
+   The `cat.binvox` contains 51x51x51 volumetric data with a grid size of `2A` and is considered to be the 3D cat shape with Excessive Density `0.5 e/A^3`.
+   Run
 
 ```
 julia -O 3 --color=yes swaxs.jl --binvox cat.binvox -s 0.335 -v 0.5 -J 1500 0.0 0.01 1.0 -o test
 ```
 
-      The output should look like
+   The output should look like
 
 ```
 [ Info: SWAXS: Setting up parallel workers ...
@@ -141,7 +141,7 @@ julia -O 3 --color=yes swaxs.jl --binvox cat.binvox -s 0.335 -v 0.5 -J 1500 0.0 
 [ Info: SWAXS program completed successfully: elapsed time = 13.130944699 seconds with 8 cores.
 ```
 
-      And the swaxs profile from `q = 0.0` to `q = 1.0` with spacing `0.01` is saved as `test.dat`.
+   And the swaxs profile from `q = 0.0` to `q = 1.0` with spacing `0.01` is saved as `test.dat`.
 
 
 
