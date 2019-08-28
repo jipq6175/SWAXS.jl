@@ -5,7 +5,8 @@ Compute the solution x-ray scattering profiles using orientational average
 Possible compatible file formats:
 1. Single `.pdb` file
 2. A pair of `.pdb` files: `solute.pdb` and `solvent.pdb` (used for buffer subtraction and excluded volume)
-3. 3D electron density map; `.mrc` or `.map`. Buffer subtraction will be implemented.
+3. 3D electron density map: `.mrc` or `.map`. Buffer subtraction is implemented.
+4. 3D shape with dummy voxels: `.binvox`. Buffer subtraction is implemented.
 
 
 ## Required Packages
@@ -23,9 +24,10 @@ Run `julia swaxs.jl --help`.
 
 ```
 
-usage: swaxs.jl [-d DENSITY] [-p PDB] [-t SOLUTE] [-v SOLVENT]
-                [-s SOLVENT_DENSITY] [-c DENSITY_CUTOFF] [-J J]
-                [-n NPR] [-h] qmin qspacing qmax
+usage: swaxs.jl [-D DENSITY] [-P PDB] [-T SOLUTE] [-V SOLVENT]
+                [-B BINVOX] [-s SOLVENT_DENSITY] [-v VOXEL_DENSITY]
+                [-c DENSITY_CUTOFF] [-J J] [-n NPR] [-o OUTPUT] [-h]
+                qmin qspacing qmax
 
 positional arguments:
   qmin                  Starting q value, in (1/A) (type: Float64)
@@ -33,16 +35,22 @@ positional arguments:
   qmax                  Ending q value, in (1/A) (type: Float64)
 
 optional arguments:
-  -d, --density DENSITY Electron density map file: .mrc or .map
-  -p, --pdb PDB         Single file containing atomic coordinates: .pdb
-  -t, --solute SOLUTE   The solute.pdb file
-  -v, --solvent SOLVENT The solvent.pdb file
+  -D, --density DENSITY
+                        Electron density map file: .mrc or .map
+  -P, --pdb PDB         Single file containing atomic coordinates: .pdb
+  -T, --solute SOLUTE   The solute.pdb file
+  -V, --solvent SOLVENT
+                        The solvent.pdb file
+  -B, --binvox BINVOX   The shape file of dummy voxels: .binvox
   -s, --solvent_density SOLVENT_DENSITY
                         The bulk solvent electron density in e/A^3 (type: Float64, default: 0.335)
+  -v, --voxel_density VOXEL_DENSITY
+                        The averaged electron density on dummy voxels in e/A^3 (type: Float64, default: 0.5)
   -c, --density_cutoff DENSITY_CUTOFF
                         The electron density cutoff to exclude near-zero voxels (type: Float64, default: 0.001)
   -J, --J J             Number of orientations to be averaged (type: Int64, default: 1200)
   -n, --npr NPR         Number of parallel workers for computation (type: Int64, default: 8)
+  -o, --output OUTPUT   Output file prefix for saving the .dat file (default: "output")
   -h, --help            show this help message and exit
 
 ```
@@ -111,6 +119,29 @@ julia -O 3 --color=yes swaxs.jl --density den.mrc -s 0.335 -c 0.001 -J 1500 0.0 
 ```
 
    And the swaxs profile from `q = 0.0` to `q = 1.0` with spacing `0.01` is saved as `test.dat`.
+
+
+
+
+### 4. Calculating from 3D shape with dummy voxels: `cat.binvox`
+
+      The `cat.binvox` contains 51x51x51 volumetric data with a grid size of `2A` and is considered to be the 3D cat shape with Excessive Density `0.5 e/A^3`.
+      Run
+
+   ```
+   julia -O 3 --color=yes swaxs.jl --binvox cat.binvox -s 0.335 -v 0.5 -J 1500 0.0 0.01 1.0 -o test
+   ```
+
+      The output should look like
+
+   ```
+   [ Info: SWAXS: Setting up parallel workers ...
+   [ Info: Please wait ...
+   [ Info: Computing SWAXS (J=1500) using shape file: cat.binvox, with voxel_density=0.5, sden=0.335.
+   [ Info: SWAXS program completed successfully: elapsed time = 13.130944699 seconds with 8 cores.
+   ```
+
+      And the swaxs profile from `q = 0.0` to `q = 1.0` with spacing `0.01` is saved as `test.dat`.
 
 
 
