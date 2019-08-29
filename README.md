@@ -147,7 +147,7 @@ julia -O 3 --color=yes swaxs.jl --binvox cat.binvox -s 0.335 -v 0.5 -J 1500 0.0 
 
 ## Note
 
-1. The options `--pdb`, `--density` and `--solute --solvent` cannot not be specified at the same time.
+1. The options `--pdb`, `--density`, `--binvox` and `--solute --solvent` cannot not be specified at the same time. Otherwise, error will be thrown.
 2. If high-throughput computation is required, one should bypassing the commandline because it sets up parallel workers everytime. To avoid that, set up your parallel workers and call `@everywhere include("swaxs_module.jl")` and `@everywhere using .SWAXS` in your julia script.
 3. If your structures contain too many atoms or voxels, I suggest you to take a look at GPUSWAXS.
 4. The atmo-name processor might be a little bit buggy, I will try to fix some of the parsing issues.
