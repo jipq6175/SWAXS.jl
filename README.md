@@ -1,5 +1,14 @@
 # SWAXS.jl
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://jipq6175.github.io/SWAXS.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jipq6175.github.io/SWAXS.jl/dev)
+[![Build Status](https://travis-ci.com/jipq6175/SWAXS.jl.svg?branch=master)](https://travis-ci.com/jipq6175/SWAXS.jl)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/jipq6175/SWAXS.jl?svg=true)](https://ci.appveyor.com/project/jipq6175/SWAXS-jl)
+[![Codecov](https://codecov.io/gh/jipq6175/SWAXS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jipq6175/SWAXS.jl)
+[![Coveralls](https://coveralls.io/repos/github/jipq6175/SWAXS.jl/badge.svg?branch=master)](https://coveralls.io/github/jipq6175/SWAXS.jl?branch=master)
+[![Build Status](https://api.cirrus-ci.com/github/jipq6175/SWAXS.jl.svg)](https://cirrus-ci.com/github/jipq6175/SWAXS.jl)
+
+
 Compute the solution x-ray scattering profiles using orientational average
 
 Possible compatible file formats:
