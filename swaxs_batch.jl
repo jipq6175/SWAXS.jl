@@ -43,9 +43,15 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
     @info("Starting to compute the SWAXS profiles of $nsolute frames .....");
     for i = 1:nsolute
 
-        t = @elapsed mat = PDBSWAXS(joinpath(dir, solutelist[i]), joinpath(dir, solventlist[i]), q; J=J);
-        writedlm([q mat], joinpath(dir, solutelist[i][1:end-4] * ".dat"));
-        @info("The SWAXS profile of the $(solutelist[i]) was computed using solvent $(solventlist[i]) with $t seconds ...");
+
+        datfile = joinpath(dir, solutelist[i][1:end-4] * ".dat");
+        if isfile(datfile)
+            @warn("The SWAXS profile for $(solutelist[i]) exists, skipping this frame ...");
+        else
+            t = @elapsed mat = PDBSWAXS(joinpath(dir, solutelist[i]), joinpath(dir, solventlist[i]), q; J=J);
+            writedlm(datfile, [q mat]);
+            @info("The SWAXS profile of the $(solutelist[i]) was computed using solvent $(solventlist[i]) with $t seconds ...");
+        end
 
     end
 
@@ -53,7 +59,7 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Desktop\\YenAATT_120mM_NA";
-q = collect(0.0:0.125:0.875);
+dir = "G:\\My Drive\\20. MDWAXS\\YenAATT_120mM_NA";
+q = collect(0.0:0.005:1.5);
 
-swaxs_batch(dir, q; J=1000, soluteprefix="frame", solventprefix="bulk");
+swaxs_batch(dir, q; J=1500, soluteprefix="frame", solventprefix="bulk");
