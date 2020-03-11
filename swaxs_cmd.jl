@@ -1,68 +1,7 @@
 #swaxs.jl
 
 # setting up user's environment
-using ArgParse, Distributed, DelimitedFiles
-
-function parse_commandline()
-    s = ArgParseSettings()
-
-    @add_arg_table s begin
-        "--density", "-D"
-            help = "Electron density map file: .mrc or .map"
-            arg_type = String
-        "--pdb", "-P"
-            help = "Single file containing atomic coordinates: .pdb"
-            arg_type = String
-        "--solute", "-T"
-            help = "The solute.pdb file"
-            arg_type = String
-        "--solvent", "-V"
-            help = "The solvent.pdb file"
-            arg_type = String
-        "--binvox", "-B"
-            help = "The shape file of dummy voxels: .binvox"
-            arg_type = String
-        "--solvent_density", "-s"
-            help = "The bulk solvent electron density in e/A^3"
-            arg_type = Float64
-            default = 0.335
-        "--voxel_density", "-v"
-            help = "The averaged electron density on dummy voxels in e/A^3"
-            arg_type = Float64
-            default = 0.5;
-        "--density_cutoff", "-c"
-            help = "The electron density cutoff to exclude near-zero voxels"
-            arg_type = Float64
-            default = 0.001
-        "--J", "-J"
-            help = "Number of orientations to be averaged"
-            arg_type = Int64
-            default = 1200
-        "--npr", "-n"
-            help = "Number of parallel workers for computation"
-            arg_type = Int64
-            default = Sys.CPU_THREADS
-        "qmin"
-            help = "Starting q value, in (1/A)"
-            arg_type = Float64
-            required = true
-        "qspacing"
-            help = "q grid spacing, in (1/A)"
-            arg_type = Float64
-            required = true
-        "qmax"
-            help = "Ending q value, in (1/A)"
-            arg_type = Float64
-            required = true
-        "--output", "-o"
-            help = "Output file prefix for saving the .dat file"
-            arg_type = String
-            default = "output"
-
-    end
-
-    return parse_args(s)
-end
+include(".\\src\\parser.jl");
 
 function main()
 
@@ -84,32 +23,34 @@ function main()
     density_cutoff = args["density_cutoff"];
     output = args["output"];
 
-    @info("Please wait ... ");
+    @info("--- SWAXS: Please wait ... ");
     if !isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox)
-        @info("Computing SWAXS (J=$J) using electron density file: $density, with sden=$solvent_density cutoff=$density_cutoff. ");
+        @info("--- SWAXS: Computing SWAXS (J=$J) using electron density file: $density, with sden=$solvent_density cutoff=$density_cutoff. ");
         m = mrc_reader(density);
         t = @elapsed intensity = DenSWAXS(m, q; density_cutoff=density_cutoff, J=J, sden=solvent_density);
 
     elseif isnothing(density) && !isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox)
-        @info("Computing SWAXS (J=$J) using single PDB file: $pdb. ");
+        @info("--- SWAXS: Computing SWAXS (J=$J) using single PDB file: $pdb. ");
         t = @elapsed intensity = PDBSWAXS(pdb, q; J=J);
 
     elseif isnothing(density) && isnothing(pdb) && !isnothing(solute) && !isnothing(solvent) && isnothing(binvox)
-        @info("Computing SWAXS (J=$J) using solute: $solute and solvent: $solvent. ");
+        @info("--- SWAXS: Computing SWAXS (J=$J) using solute: $solute and solvent: $solvent. ");
         t = @elapsed intensity = PDBSWAXS(solute, solvent, q; J=J);
 
     elseif isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && !isnothing(binvox)
-        @info("Computing SWAXS (J=$J) using shape file: $binvox, with voxel_density=$voxel_density, sden=$solvent_density.");
+        @info("--- SWAXS: Computing SWAXS (J=$J) using shape file: $binvox, with voxel_density=$voxel_density, sden=$solvent_density.");
         v = readvox(binvox);
         t = @elapsed intensity = ShapeSWAXS(v, voxel_density, q; J=J, sd=solvent_density);
 
     else
-        @warn("Observed conflicting options or didn't parse a pair of solute and solvent files. ");
+        @warn("--- SWAXS: Observed conflicting options or didn't parse a pair of solute and solvent files. ");
         return nothing;
     end
 
     writedlm(output * ".dat", [q intensity]);
-    @info("SWAXS program completed successfully: elapsed time = $t seconds with $(args["npr"]) cores.")
+    @info("--- SWAXS: SWAXS program completed successfully: elapsed time = $t seconds with $(args["npr"]) cores.")
+    @info("--- SWAXS: Removing parallel workers ...");
+    rmprocs(workers());
     return nothing;
 end
 
@@ -120,7 +61,7 @@ args = parse_commandline();
 
 # check the options
 NPROCS = args["npr"];
-@info("SWAXS: Setting up parallel workers ...");
+@info("--- SWAXS: Setting up parallel workers ...");
 nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : addprocs(NPROCS - nprocs());
 @everywhere include(".\\src\\SWAXS.jl");
 @everywhere using .SWAXS
