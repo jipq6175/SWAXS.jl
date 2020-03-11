@@ -15,6 +15,7 @@ export Voxel, readvox, ShapeSWAXS
 include("densityswaxs.jl");
 include("pdbswaxs.jl");
 include("voxel.jl");
+include("parser.jl");
 
 
 # for building executable
