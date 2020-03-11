@@ -43,7 +43,7 @@ Base.@ccallable function julia_main()::Cint
     @info("--- SWAXS: Setting up parallel workers ...");
     nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : addprocs(NPROCS - nprocs());
 
-    @info("---SWAXS: Please wait ... ");
+    @info("--- SWAXS: Please wait ... ");
     if !isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox)
         @info("--- SWAXS: Computing SWAXS (J=$J) using electron density file: $density, with sden=$solvent_density cutoff=$density_cutoff. ");
         m = mrc_reader(density);
