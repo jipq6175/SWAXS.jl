@@ -30,10 +30,10 @@ const COEFS = Dict{String, Array{Float64, 1}}(
 "P" => [6.4345, 4.1791, 1.78, 1.4908, 1.9067, 27.157, 0.526, 68.1645, 1.1149],
 "S" => [6.9053, 5.2034, 1.4379, 1.5863, 1.4679, 22.2151, 0.2536, 56.172, 0.8669],
 "Cl" => [11.4604, 7.1964, 6.2556, 1.6455, 0.0104, 1.1662, 18.5194, 47.7784, -9.5574],
-"Cl1-" => [18.2915, 7.2084, 6.5337, 2.3386, 0.0066, 1.1717, 19.5424, 60.4486, -16.378],
+"Cl-" => [18.2915, 7.2084, 6.5337, 2.3386, 0.0066, 1.1717, 19.5424, 60.4486, -16.378],
 "Ar" => [7.4845, 6.7723, 0.6539, 1.6442, 0.9072, 14.8407, 43.8983, 33.3929, 1.4445],
 "K" => [8.2186, 7.4398, 1.0519, 0.8659, 12.7949, 0.7748, 213.187, 41.6841, 1.4228],
-"K1+" => [7.9578, 7.4917, 6.359, 1.1915, 12.6331, 0.7674, -0.002, 31.9128, -4.9978],
+"K+" => [7.9578, 7.4917, 6.359, 1.1915, 12.6331, 0.7674, -0.002, 31.9128, -4.9978],
 "Ca" => [8.6266, 7.3873, 1.5899, 1.0211, 10.4421, 0.6599, 85.7484, 178.437, 1.3751],
 "Ca2+" => [15.6348, 7.9518, 8.4372, 0.8537, -0.0074, 0.6089, 10.3116, 25.9905, -14.875],
 "Sc" => [9.189, 7.3679, 1.6409, 1.468, 9.0213, 0.5729, 136.108, 51.3531, 1.3329],
@@ -359,9 +359,9 @@ end
 
 
 
-function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500)
+function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500, waters=true, ions=true)
 
-    solute = SimplyPDB(solutefn);
+    solute = SimplyPDB(solutefn; waters=waters, ions=ions);
     solvent = SimplyPDB(solventfn);
 
     intensity = pmap(x -> _DQ(solute, solvent, x; J=J), q, distributed=true);
@@ -372,8 +372,8 @@ end
 
 
 
-function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500)
-    pdb = SimplyPDB(pdbfn);
+function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500, waters=true, ions=true)
+    pdb = SimplyPDB(pdbfn; waters=waters, ions=ions);
 
     intensity = pmap(x -> _DQ(pdb, x; J=J), q, distributed=true);
     return intensity;

@@ -8,7 +8,7 @@ const AFloat = AbstractFloat;
 const AS = AbstractString;
 
 export mrc, mrc_reader, DenSWAXS
-export PDBSWAXS
+export PDBSWAXS, make_solvent
 export Voxel, readvox, ShapeSWAXS
 
 
@@ -16,6 +16,7 @@ include("densityswaxs.jl");
 include("pdbswaxs.jl");
 include("voxel.jl");
 include("parser.jl");
+include("make_solvent.jl");
 
 
 # for building executable

@@ -9,11 +9,29 @@ nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : add
 @everywhere include(".\\src\\SWAXS.jl");
 @everywhere using .SWAXS
 
-# solutefn = "C:\\Users\\Yen-Lin\\Desktop\\YenAATT_120mM_NA\\frame1.pdb";
-# solventfn = "C:\\Users\\Yen-Lin\\Desktop\\YenAATT_120mM_NA\\bulk.pdb";
-# q = collect(0.0:0.05:1.0);
 
-# @time mat = PDBSWAXS(solutefn, solventfn, q; J=1000);
+
+function solvent_batch(dir::AbstractString, soluteprefix::AbstractString, sourcefn::AbstractString; solventprefix::AbstractString="solvent")
+
+    filelist = readdir(dir);
+    filelist = filelist[endswith.(filelist, ".pdb")];
+
+    solutelist = filelist[startswith.(filelist, soluteprefix)];
+    nsolute = length(solutelist);
+    source = joinpath(dir, sourcefn);
+
+    for i = 1:nsolute
+        @info("Making solvent for $(solutelist[i]) ... ");
+        outputfn = joinpath(dir, solventprefix*"$i.pdb");
+        make_solvent(joinpath(dir, solutelist[i]), source, outputfn);
+    end
+
+    return nothing;
+end
+
+
+
+
 
 
 function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, soluteprefix::AbstractString="frame", solventprefix::AbstractString="bulk")
@@ -59,7 +77,25 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "G:\\My Drive\\20. MDWAXS\\YenAATT_120mM_NA";
-q = collect(0.0:0.005:1.5);
+dir = "C:\\Users\\Yen-Lin\\Desktop\\YenAATT_120mM_NA";
 
-swaxs_batch(dir, q; J=1500, soluteprefix="frame", solventprefix="bulk");
+
+# Batch solvent
+@time solvent_batch(dir, "frame", "bulk.pdb");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#q = collect(0.0:0.005:1.5);
+#swaxs_batch(dir, q; J=1500, soluteprefix="frame", solventprefix="solvent");
