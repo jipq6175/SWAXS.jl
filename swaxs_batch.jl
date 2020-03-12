@@ -77,25 +77,12 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Desktop\\YenAATT_120mM_NA";
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\YenAATT_120mM_NA";
 
 
 # Batch solvent
 @time solvent_batch(dir, "frame", "bulk.pdb");
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#q = collect(0.0:0.005:1.5);
-#swaxs_batch(dir, q; J=1500, soluteprefix="frame", solventprefix="solvent");
+q = collect(0.0:0.005:1.5);
+swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");
