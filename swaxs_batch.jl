@@ -21,9 +21,10 @@ function solvent_batch(dir::AbstractString, soluteprefix::AbstractString, source
     source = joinpath(dir, sourcefn);
 
     for i = 1:nsolute
-        @info("Making solvent for $(solutelist[i]) ... ");
-        outputfn = joinpath(dir, solventprefix*"$i.pdb");
-        make_solvent(joinpath(dir, solutelist[i]), source, outputfn);
+        s = solutelist[i];
+        @info("Making solvent for $s ... ");
+        outputfn = joinpath(dir, replace(s, soluteprefix => solventprefix));
+        make_solvent(joinpath(dir, s), source, outputfn);
     end
 
     return nothing;
@@ -67,8 +68,9 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
             @warn("The SWAXS profile for $(solutelist[i]) exists, skipping this frame ...");
         else
             t = @elapsed mat = PDBSWAXS(joinpath(dir, solutelist[i]), joinpath(dir, solventlist[i]), q; J=J);
+            #t = @elapsed mat = PDBSWAXS(joinpath(dir, solutelist[i]), q; J=J, waters=false, ions=false);
             writedlm(datfile, [q mat]);
-            @info("The SWAXS profile of the $(solutelist[i]) was computed using solvent $(solventlist[i]) with $t seconds ...");
+            @info("The SWAXS profile of {$(solutelist[i]), $(solventlist[i])} is done with $(round(t, digits=2)) seconds ...");
         end
 
     end
@@ -84,5 +86,5 @@ dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\YenAATT_120mM_NA";
 @time solvent_batch(dir, "frame", "bulk.pdb");
 
 
-q = collect(0.0:0.005:1.5);
-swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");
+#q = collect(0.0:0.005:1.5);
+#swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");
