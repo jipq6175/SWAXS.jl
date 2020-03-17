@@ -1,37 +1,24 @@
 
 
-using DelimitedFiles, Distributed, Plots
-cd("G:\\My Drive\\18. Github Repo\\SWAXS.jl");
-NPROCS = Sys.CPU_THREADS;
-nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : addprocs(NPROCS - nprocs());
-
-@everywhere include(".\\src\\SWAXS.jl");
-@everywhere using .SWAXS
+using DelimitedFiles, Plots
 
 
-q = collect(0.0:0.01:1.5);
+# q, rna, rna25k400, rna25na100, rna25mg10 = load("rna25.jld", "q", "rna", "rna25k400", "rna25na100", "rna25mg10");
+# q, dna, dna25k400, dna25mg05, dna25mg2 = load("dna25.jld", "q", "dna", "dna25k400", "dna25mg05", "dna25mg2");
 
-# rna12
-@time st = PDBSWAXS("solute.pdb", q; J=1200);
-@time sv = PDBSWAXS("solvent.pdb", q; J=1200);
-@time rna = PDBSWAXS("solute.pdb", q; J=1200, waters=false);
-@time rna_bs = PDBSWAXS("solute.pdb", "solvent.pdb", q; J=1200);
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\YenMixDNA_400mM_K";
 
+datlist = readdir(dir; join=true);
+datlist = datlist[endswith.(datlist, ".dat")];
 
-scatter(q, rna, yscale=:log10)
-plot!(q, rna_bs, yscale=:log10)
+q = collect(0.0:0.005:1.5);
+n = length(datlist);
+data = Array{Float64, 2}(undef, length(q), n);
 
-
-plot(q, st, yscale=:log10)
-plot!(q, sv, yscale=:log10)
-
-
-# dna25
-@time dna = PDBSWAXS("frame1.pdb", q; J=1200, waters=false);
-@time dna_bs = PDBSWAXS("frame1.pdb", "frame1_solvent.pdb", q; J=1200);
+for i = 1:n
+    m = readdlm(datlist[i]);
+    data[:, i] = m[:, 2];
+end
 
 
-
-scatter(q, dna, yscale=:log10);
-plot!(q, dna_bs, yscale=:log10, lw=2.0)
-plot!(q, dna_bs2, yscale=:log10, lw=3.0)
+plot(q, data[:,1:end], yscale=:log10)

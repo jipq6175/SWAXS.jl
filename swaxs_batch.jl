@@ -78,13 +78,23 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
     return nothing;
 end
 
+using Plots
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\YenMixDNA_10mM_MG";
 
-dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\YenAATT_120mM_NA";
+q = collect(0.0:0.02:1.5);
+solute = SimplyPDB(joinpath(dir, "frame1.pdb"));
+solvent = SimplyPDB(joinpath(dir, "solvent1.pdb"));
+
+
+@time mg = PDBSWAXS(joinpath(dir, "frame1.pdb"), joinpath(dir, "solvent1.pdb"), q; J=1000);
+@time mgt = PDBSWAXS(joinpath(dir, "frame1.pdb"), q);
+@time mgtest = PDBSWAXS(joinpath(dir, "frame1_test.pdb"), q; waters=false);
+@time mgv = PDBSWAXS(joinpath(dir, "solvent1.pdb"), q);
 
 
 # Batch solvent
-@time solvent_batch(dir, "frame", "bulk.pdb");
+# @time solvent_batch(dir, "frame", "bulk.pdb");
 
 
-#q = collect(0.0:0.005:1.5);
-#swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");
+# q = collect(0.0:0.005:1.5);
+# swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");

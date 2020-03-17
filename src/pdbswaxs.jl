@@ -259,6 +259,7 @@ function SimplyPDB(filename::AS; coefs::AFT=COEFS, waters::Bool=true, ions::Bool
 
     atomnames = collect(keys(coefs));
     IONS = atomnames[endswith.(atomnames, "+") .| endswith.(atomnames, "-")];
+    append!(IONS, ["NA"; "K"; "CL"; "MG"; "MGH"]);
     SOL = ["SOL"; "WAT"; "HOH"];
 
     # Read pdb file
@@ -297,16 +298,22 @@ function SimplyPDB(filename::AS; coefs::AFT=COEFS, waters::Bool=true, ions::Bool
         if (sp[4] in IONS)
             if ions
                 push!(atomid, sp[4]);
-                mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+                # with chain name or not
+                z = parse(Float64, sp[id+2]);
+                mat = z == 1.0 || z == 0.0 ? vcat(mat, parse.(Float64, sp[id-1:id+1])') : vcat(mat, parse.(Float64, sp[id:id+2])');
             end
         elseif (sp[4] in SOL)
             if waters
                 push!(atomid, "SOL-" * sp[end]);
-                mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+                # with chain name or not
+                z = parse(Float64, sp[id+2]);
+                mat = z == 1.0 || z == 0.0 ? vcat(mat, parse.(Float64, sp[id-1:id+1])') : vcat(mat, parse.(Float64, sp[id:id+2])');
             end
         else
             push!(atomid, "" * sp[end]);
-            mat = vcat(mat, parse.(Float64, sp[id:id+2])');
+            # with chain name or not
+            z = parse(Float64, sp[id+2]);
+            mat = z == 1.0 || z == 0.0 ? vcat(mat, parse.(Float64, sp[id-1:id+1])') : vcat(mat, parse.(Float64, sp[id:id+2])');
         end
     end
     return atomid, mat;
