@@ -297,7 +297,7 @@ function SimplyPDB(filename::AS; coefs::AFT=COEFS, waters::Bool=true, ions::Bool
         sp = convert.(String, split(atoms[i]));
         if (sp[4] in IONS)
             if ions
-                push!(atomid, sp[4]);
+                push!(atomid, sp[end]);
                 # with chain name or not
                 z = parse(Float64, sp[id+2]);
                 mat = z == 1.0 || z == 0.0 ? vcat(mat, parse.(Float64, sp[id-1:id+1])') : vcat(mat, parse.(Float64, sp[id:id+2])');
