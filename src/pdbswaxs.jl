@@ -255,7 +255,7 @@ end
 
 
 
-function SimplyPDB(filename::AS; waters::Bool=true, ions::Bool=true)::TAA
+function SimplyPDB(filename::AS; coefs::AFT=COEFS, waters::Bool=true, ions::Bool=true)::TAA
 
     atomnames = collect(keys(coefs));
     IONS = atomnames[endswith.(atomnames, "+") .| endswith.(atomnames, "-")];
