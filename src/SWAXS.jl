@@ -1,6 +1,6 @@
 module SWAXS
 
-using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics
+using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions
 
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
