@@ -76,7 +76,7 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
     end
 
     # define cutoff
-    cutoff = 10.0 * pdf(MvNormal(zeros(3,1), Σ), [ξ; 0.0; 0.0]);
+    cutoff = 10.0 * pdf(MvNormal(zeros(3), Σ), [ξ; 0.0; 0.0]);
     @info("--- Making Solvent: cutoff = $cutoff ...");
 
     outputlines = Array{String, 1}(undef, 0);
