@@ -81,50 +81,50 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
 
     outputlines = Array{String, 1}(undef, 0);
     # get the waters from the solute frame
-    # for i = (ndist+1):length(solutelines)
-    #     r = solutepos[i, :];
-    #     sum(map(x -> pdf(x, r), dist)) <= cutoff ? append!(outputlines, [solutelines[i]]) : nothing;
-    # end
-
-    i = ndist + 1;
-    while i <= length(solutelines)
-        substr = split(solutelines[i]);
+    for i = (ndist+1):length(solutelines)
         r = solutepos[i, :];
-        if sum(map(x -> pdf(x, r), dist)) <= cutoff
-            if substr[4] in SOL
-                append!(outputlines, solutelines[i:i+2]);
-                i += 3;
-            else
-                append!(outputlines, [solutelines[i]]);
-                i += 1;
-            end
-        else
-            i += 1;
-        end
+        sum(map(x -> pdf(x, r), dist)) <= cutoff ? append!(outputlines, solutelines[i:i]) : nothing;
     end
+
+    # i = ndist + 1;
+    # while i <= length(solutelines)
+    #     substr = split(solutelines[i]);
+    #     r = solutepos[i, :];
+    #     if sum(map(x -> pdf(x, r), dist)) <= cutoff
+    #         if substr[4] in SOL
+    #             append!(outputlines, solutelines[i:i+2]);
+    #             i += 3;
+    #         else
+    #             append!(outputlines, [solutelines[i]]);
+    #             i += 1;
+    #         end
+    #     else
+    #         i += 1;
+    #     end
+    # end
 
 
     # fill in the blank of the molecules.
-    # for i = 1:length(sourcelines)
-    #     r = sourcepos[i, :];
-    #     sum(map(x -> pdf(x, r), dist)) >= cutoff ? append!(outputlines, [sourcelines[i]]) : nothing;
-    # end
-    i = 1;
-    while i <= length(sourcelines)
-        substr = split(sourcelines[i]);
+    for i = 1:length(sourcelines)
         r = sourcepos[i, :];
-        if sum(map(x -> pdf(x, r), dist)) >= cutoff
-            if substr[4] in SOL
-                append!(outputlines, sourcelines[i:i+2]);
-                i += 3;
-            else
-                append!(outputlines, sourcelines[i:i]);
-                i += 1;
-            end
-        else
-            i += 1;
-        end
+        sum(map(x -> pdf(x, r), dist)) >= cutoff ? append!(outputlines, sourcelines[i:i]) : nothing;
     end
+    # i = 1;
+    # while i <= length(sourcelines)
+    #     substr = split(sourcelines[i]);
+    #     r = sourcepos[i, :];
+    #     if sum(map(x -> pdf(x, r), dist)) >= cutoff
+    #         if substr[4] in SOL
+    #             append!(outputlines, sourcelines[i:i+2]);
+    #             i += 3;
+    #         else
+    #             append!(outputlines, sourcelines[i:i]);
+    #             i += 1;
+    #         end
+    #     else
+    #         i += 1;
+    #     end
+    # end
 
 
     fout = open(outputfn, "w");
