@@ -98,6 +98,8 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
                 append!(outputlines, [solutelines[i]]);
                 i += 1;
             end
+        else
+            i += 1;
         end
     end
 
@@ -119,6 +121,8 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
                 append!(outputlines, sourcelines[i:i]);
                 i += 1;
             end
+        else
+            i += 1;
         end
     end
 
