@@ -24,7 +24,7 @@ function solvent_batch(dir::AbstractString, soluteprefix::AbstractString, source
         s = solutelist[i];
         @info("Making solvent for $s ... ");
         outputfn = joinpath(dir, replace(s, soluteprefix => solventprefix));
-        make_solvent(joinpath(dir, s), source, outputfn);
+        make_solvent(joinpath(dir, s), source, 1.0, outputfn);
     end
 
     return nothing;
@@ -79,7 +79,7 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\Cluster_Yen_MixRNA_400mM_nk_ht";
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\RNA25K400cluster4";
 
 # q = collect(0.0:0.02:1.5);
 # solute = SimplyPDB(joinpath(dir, "frame1.pdb"));
@@ -88,8 +88,8 @@ dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\Cluster_Yen_MixRNA_4
 
 
 # Batch solvent
-@time solvent_batch(dir, "cluster", "bulk.pdb");
+@time solvent_batch(dir, "frame", "bulk.pdb");
 
 
 q = collect(0.0:0.005:1.5);
-swaxs_batch(dir, q; J=1750, soluteprefix="cluster", solventprefix="solvent");
+swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");

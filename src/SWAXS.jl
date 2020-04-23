@@ -1,6 +1,6 @@
 module SWAXS
 
-using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions
+using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions, Dierckx
 
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
@@ -8,7 +8,7 @@ const AFloat = AbstractFloat;
 const AS = AbstractString;
 
 export mrc, mrc_reader, DenSWAXS
-export PDBSWAXS, make_solvent, SimplyPDB
+export PDBSWAXS, make_solvent, SimplyPDB, chi2
 export Voxel, readvox, ShapeSWAXS
 
 
@@ -17,7 +17,7 @@ include("pdbswaxs.jl");
 include("voxel.jl");
 include("parser.jl");
 include("make_solvent.jl");
-
+include("fitting.jl");
 
 # for building executable
 Base.@ccallable function julia_main()::Cint
