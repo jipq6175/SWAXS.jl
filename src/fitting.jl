@@ -5,8 +5,8 @@
 function chi2(iexp::AMat, fitdata::AMat; option::AS="log")
 
     qmax = min(iexp[end, 1], fitdata[end, 1]);
-    fitidx = findall(fitdata[:, 1] .>= qmax);
-    expidx = findall(iexp[:, 1] .>= qmax);
+    fitidx = findall(fitdata[:, 1] .<= qmax);
+    expidx = findall(iexp[:, 1] .<= qmax);
     ifit = Spline1D(fitdata[fitidx, 1], fitdata[fitidx, 2])(iexp[expidx,1]);
 
     χ2 = -1.0;
