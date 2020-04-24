@@ -1,6 +1,6 @@
 module SWAXS
 
-using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions, Dierckx
+using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions, Dierckx, Optim
 
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
@@ -8,7 +8,7 @@ const AFloat = AbstractFloat;
 const AS = AbstractString;
 
 export mrc, mrc_reader, DenSWAXS
-export PDBSWAXS, make_solvent, SimplyPDB, chi2
+export PDBSWAXS, make_solvent, SimplyPDB, chi2, optscale
 export Voxel, readvox, ShapeSWAXS
 
 

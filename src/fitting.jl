@@ -23,3 +23,20 @@ function chi2(iexp::AMat, fitdata::AMat; option::AS="log")
 
     return χ2;
 end
+
+
+
+# scaling and correction
+function optscale(iexp::AMat, fitdata::AMat; guess::AVec=[0.01; 0.0])
+
+    qmax = min(iexp[end, 1], fitdata[end, 1]);
+    fitidx = findall(fitdata[:, 1] .<= qmax);
+    expidx = findall(iexp[:, 1] .<= qmax);
+    ifit = Spline1D(fitdata[fitidx, 1], fitdata[fitidx, 2])(iexp[expidx,1]);
+
+    # doing optimization on the linear chi^2 to avoid the domain error of the log
+    target(x::AVec) = mean(((iexp[expidx, 2] - (x[1] * ifit .+ x[2])) ./ iexp[expidx, 3]) .^ 2);
+    res = optimize(target, guess, NelderMead());
+    rlt = Optim.minimizer(res);
+    return rlt[1], rlt[2];
+end
