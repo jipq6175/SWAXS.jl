@@ -79,7 +79,7 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\RNA25K400ML";
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\RNA_100mM_Na_Cluster_pff";
 
 # q = collect(0.0:0.02:1.5);
 # solute = SimplyPDB(joinpath(dir, "frame1.pdb"));
@@ -88,8 +88,8 @@ dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\NA25WAXS\\RNA25K400ML";
 
 
 # Batch solvent
-@time solvent_batch(dir, "frame", "bulk.pdb");
+@time solvent_batch(dir, "cluster", "bulk.pdb");
 
 
-#q = collect(0.0:0.005:1.5);
-#swaxs_batch(dir, q; J=1750, soluteprefix="frame", solventprefix="solvent");
+q = collect(0.0:0.005:1.5);
+swaxs_batch(dir, q; J=1750, soluteprefix="cluster", solventprefix="solvent");
