@@ -1,3 +1,33 @@
+# extract the solvent only
+function make_solvent(solutefn::String, outputfn::String)
+
+    soluteio = open(solutefn, "r");
+    solutelines = readlines(soluteio);
+    close(soluteio);
+    solutelines = solutelines[startswith.(solutelines, "ATOM")];
+
+    IONS = ["K"; "CL"; "MGH"; "NA"; "Na+"; "Cl-"];
+    SOL = ["SOL", "WAT", "HOH"];
+
+    outputlines = Array{String, 1}(undef, 0);
+
+    # get the waters from the solute frame
+    for i = 1:length(solutelines)
+        substr = split(solutelines[i]);
+        substr[4] in vcat(SOL, IONS) ? append!(outputlines, solutelines[i:i]) : nothing;
+    end
+
+    fout = open(outputfn, "w");
+    for i = 1:length(outputlines)
+        write(fout, outputlines[i]);
+        write(fout, "\n");
+    end
+    close(fout);
+
+    return nothing;
+end
+
+
 
 # sticking the ions
 function make_solvent(solutefn::String, sourcefn::String, outputfn::String)
