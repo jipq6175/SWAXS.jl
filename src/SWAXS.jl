@@ -8,7 +8,8 @@ const AFloat = AbstractFloat;
 const AS = AbstractString;
 
 export mrc, mrc_reader, DenSWAXS
-export PDBSWAXS, make_solvent, SimplyPDB, chi2, optscale
+export PDBSWAXS, SimplyPDB, chi2, optscale
+export make_solvent
 export Voxel, readvox, ShapeSWAXS
 
 
