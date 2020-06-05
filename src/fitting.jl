@@ -40,3 +40,7 @@ function optscale(iexp::AMat, fitdata::AMat; guess::AVec=[0.01; 0.0])
     rlt = Optim.minimizer(res);
     return rlt[1], rlt[2];
 end
+
+
+# scaling and correction 2: iterative
+# function optscale2(iexp::AMat, fitdata::AMat; guess::AVec=[0.01; 0.0], niter=100)
