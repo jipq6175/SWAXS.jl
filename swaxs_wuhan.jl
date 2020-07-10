@@ -79,7 +79,7 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\WuhanVirus\\WuhanWAXS";
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\WuhanVirus\\WuhanWAXS_dimer";
 
 # q = collect(0.0:0.02:1.5);
 # solute = SimplyPDB(joinpath(dir, "frame1.pdb"));
@@ -88,8 +88,8 @@ dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\WuhanVirus\\WuhanWAXS";
 
 
 # Batch solvent
-@time solvent_batch(dir, "wuhan");
+@time solvent_batch(dir, "Dimer");
 
 
 q = collect(0.0:0.005:1.25);
-swaxs_batch(dir, q; J=1500, soluteprefix="wuhan", solventprefix="solvent");
+swaxs_batch(dir, q; J=1500, soluteprefix="Dimer", solventprefix="solvent");
