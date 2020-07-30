@@ -388,3 +388,6 @@ function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500, waters=true, ions=true)
     intensity = pmap(x -> _DQ(pdb, x; J=J), q, distributed=true);
     return intensity;
 end
+
+
+##new branch
