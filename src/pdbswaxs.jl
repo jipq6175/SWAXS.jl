@@ -369,7 +369,7 @@ end
 
 
 
-function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500, waters=true, ions=true)
+function PDBSWAXS(solutefn::AS, solventfn::AS, q::AVec; J::Int64=1500, waters::Bool=true, ions::Bool=true)
 
     solute = SimplyPDB(solutefn; waters=waters, ions=ions);
     solvent = SimplyPDB(solventfn);
@@ -382,9 +382,81 @@ end
 
 
 
-function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500, waters=true, ions=true)
+function PDBSWAXS(pdbfn::AS, q::AVec; J::Int64=1500, waters::Bool=true, ions::Bool=true)
     pdb = SimplyPDB(pdbfn; waters=waters, ions=ions);
 
     intensity = pmap(x -> _DQ(pdb, x; J=J), q, distributed=true);
+    return intensity;
+end
+
+
+
+# New Branch for estimating the average bulk buffer scattering amplitude
+
+# _SA to get the scattering amplitudes
+function _SA(sys::TAA, q::AFloat; J::Int64=1500)
+
+    atomid, pdbmat = sys;
+    atomaff = AtomAFF(atomid, q);
+    qmat = _Orie(q, J);
+
+    # Calculate A
+    qr = pdbmat * qmat';
+    A = [atomaff' * cos.(qr); -atomaff' * sin.(qr)];
+
+    return A;
+end
+
+
+# process all the solvent frames
+function _SA(buffers::AVec, q::AFloat; J::Int64=1500, waters::Bool=true, ions::Bool=true)
+
+    nframes = length(buffers);
+    amplitudes = zeros(2, J, nframes);
+    qmat = _Orie(q, J);
+    for i = 1:nframes
+        @info("-- PDBSWAXS: Processing file: $(buffers[i]) ...");
+        sys = SimplyPDB(buffers[i]; waters=waters, ions=ions);
+        atomid, pdbmat = sys;
+        atomaff = AtomAFF(atomid, q);
+
+        # Calculate A,
+        qr = pdbmat * qmat';
+        amplitudes[:, :, i] = [atomaff' * cos.(qr); -atomaff' * sin.(qr)];
+    end
+
+    return mean(amplitudes, dims=3)[:, :, 1];
+end
+
+
+# overload _DQ
+# multi dispatch of _DQ
+function _DQ(sysA::TAA, buffers::AVec, q::AFloat; J::Int64=1500, waters::Bool=true, ions::Bool=true)
+
+    # compute for A
+    # atomidA, pdbmatA = sysA;
+    # atomaffA = AtomAFF(atomidA, q);
+    # qmat = _Orie(q, J);
+    #
+    # qrA = pdbmatA * qmat';
+    # A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
+    # --  can recycle _SA for A  --
+    A = _SA(sysA, q; J=J);
+
+    # compute for B using _SA
+    B = _SA(buffers, q; J=J, waters=waters, ions=ions);
+
+    d = A .- B;
+    D = mean(sum(d.^2, dims=1));
+
+    return D;
+end
+
+
+# overload PDBSSWAXS
+function PDBSWAXS(solutefn::AS, buffers::AVec, q::AVec; J::Int64=1500, waters::Bool=true, ions::Bool=true)
+
+    solute = SimplyPDB(solutefn; waters=waters, ions=ions);
+    intensity = pmap(x -> _DQ(solute, buffers, x; J=J), q, distributed=true);
     return intensity;
 end
