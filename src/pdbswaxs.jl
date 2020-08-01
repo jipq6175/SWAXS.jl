@@ -415,7 +415,7 @@ function _SA(buffers::AVec, q::AFloat; J::Int64=1500, waters::Bool=true, ions::B
     amplitudes = zeros(2, J, nframes);
     qmat = _Orie(q, J);
     for i = 1:nframes
-        @info("-- PDBSWAXS: Processing file: $(buffers[i]) ...");
+        # @info("-- PDBSWAXS: Processing file: $(buffers[i]) ...");
         sys = SimplyPDB(buffers[i]; waters=waters, ions=ions);
         atomid, pdbmat = sys;
         atomaff = AtomAFF(atomid, q);
@@ -433,19 +433,8 @@ end
 # multi dispatch of _DQ
 function _DQ(sysA::TAA, buffers::AVec, q::AFloat; J::Int64=1500, waters::Bool=true, ions::Bool=true)
 
-    # compute for A
-    # atomidA, pdbmatA = sysA;
-    # atomaffA = AtomAFF(atomidA, q);
-    # qmat = _Orie(q, J);
-    #
-    # qrA = pdbmatA * qmat';
-    # A = [atomaffA' * cos.(qrA); -atomaffA' * sin.(qrA)];
-    # --  can recycle _SA for A  --
     A = _SA(sysA, q; J=J);
-
-    # compute for B using _SA
     B = _SA(buffers, q; J=J, waters=waters, ions=ions);
-
     d = A .- B;
     D = mean(sum(d.^2, dims=1));
 
