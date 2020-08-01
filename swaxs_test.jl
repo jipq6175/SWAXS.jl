@@ -19,6 +19,141 @@ dir = "C:\\Users\\yc225\\Desktop\\test";
 buffers = readdir(dir);
 buffers = joinpath.(dir, buffers[startswith.(buffers, "frame")]);
 @time A = SWAXS._SA(buffers[1:5], 1.0);
+z = zeros(2, 1500, 101);
+for i = 1:101
+    @info(" i = $i ... ");
+    @time z[:, :, i] = SWAXS._SA(SimplyPDB(buffers[i]), 1.0);
+end
+
+v = zeros(2, 1500, 101);
+for i = 1:101
+    @info(" i = $i ... ");
+    @time v[:, :, i] = SWAXS._SA(SimplyPDB(buffers[i]), 0.3);
+end
+
+w = zeros(2, 1500, 101);
+for i = 1:101
+    @info(" i = $i ... ");
+    @time w[:, :, i] = SWAXS._SA(SimplyPDB(buffers[i]), 0.7);
+end
+
+x = zeros(2, 1500, 101);
+for i = 1:101
+    @info(" i = $i ... ");
+    @time x[:, :, i] = SWAXS._SA(SimplyPDB(buffers[i]), 1.25);
+end
+
+y = zeros(2, 1500, 101);
+for i = 1:101
+    @info(" i = $i ... ");
+    @time y[:, :, i] = SWAXS._SA(SimplyPDB(buffers[i]), 1.5);
+end
+
+
+amp = cumsum(z, dims=3);
+for i = 1:101
+    amp[:, :, i] = amp[:, :, i] ./ i;
+end
+fintz = sum(amp[1,:,:].^2 + amp[2, :, :].^2, dims=1)[1, :];
+
+amp = cumsum(v, dims=3);
+for i = 1:101
+    amp[:, :, i] = amp[:, :, i] ./ i;
+end
+fintv = sum(amp[1,:,:].^2 + amp[2, :, :].^2, dims=1)[1, :];
+
+amp = cumsum(w, dims=3);
+for i = 1:101
+    amp[:, :, i] = amp[:, :, i] ./ i;
+end
+fintw = sum(amp[1,:,:].^2 + amp[2, :, :].^2, dims=1)[1, :];
+
+amp = cumsum(x, dims=3);
+for i = 1:101
+    amp[:, :, i] = amp[:, :, i] ./ i;
+end
+fintx = sum(amp[1,:,:].^2 + amp[2, :, :].^2, dims=1)[1, :];
+
+amp = cumsum(z, dims=3);
+for i = 1:101
+    amp[:, :, i] = amp[:, :, i] ./ i;
+end
+finty = sum(amp[1,:,:].^2 + amp[2, :, :].^2, dims=1)[1, :];
+
+
+## average intensity at q = 1.0 by the solvents
+TITLE = font(20, "Times");
+TICKS = font(14, "Times");
+GUIDE = font(16, "Times");
+LEGEN = font(14, "Times");
+
+#plot!(collect(1:101), fintv./1e8, lw=4.0, lab="q = 0.3");
+p = plot(collect(1:101), fintw./1e8, lw=4.0, lab="q = 0.7");
+plot!(collect(1:101), fintz./1e8, lw=4.0, lab="q = 1.0");
+plot!(collect(1:101), fintx./1e8, lw=4.0, lab="q = 1.25");
+plot!(collect(1:101), finty./1e8, lw=4.0, lab="q = 1.5");
+ylims!(0, 3);
+ylabel!("I(q=1.0) (A.U.)");
+xlabel!("# of Solvent Frames");
+title!("Estimated Intensity from Bulk");
+plot!(size=(600, 600), dpi=600, grid=false, legend=:topright, xtickfont=TICKS, ytickfont=TICKS, titlefont=TITLE, guidefont=GUIDE, legendfont=LEGEN, framestyle=:box)
+savefig(p, "solvent_frames.png");
+savefig(p, "solvent_frames.pdf");
+
+
+## subtracts
+sintv = zeros(101);
+sintw = zeros(101);
+sintx = zeros(101);
+sinty = zeros(101);
+sintz = zeros(101);
+# for i = 2:101
+#     subtracted = z[:,:,1:i] .- mean(z[:,:,1:i], dims=3);
+#     sint[i] = sum(sum(subtracted[1, :, :].^2 + subtracted[2, :, :].^2, dims=1)[1, :]) * (i + 1) / i / (i - 1);
+# end
+
+for i = 2:101
+    subtracted = v[:,:,1:i] .- mean(v[:,:,1:i], dims=3);
+    tmp = mean(subtracted, dims=2)[:, 1, :];
+    sintv[i] = sum(tmp[1, :].^2 + tmp[2, :].^2) * (i + 1) / i / (i - 1);
+end
+for i = 2:101
+    subtracted = w[:,:,1:i] .- mean(w[:,:,1:i], dims=3);
+    tmp = mean(subtracted, dims=2)[:, 1, :];
+    sintw[i] = sum(tmp[1, :].^2 + tmp[2, :].^2) * (i + 1) / i / (i - 1);
+end
+for i = 2:101
+    subtracted = x[:,:,1:i] .- mean(x[:,:,1:i], dims=3);
+    tmp = mean(subtracted, dims=2)[:, 1, :];
+    sintx[i] = sum(tmp[1, :].^2 + tmp[2, :].^2) * (i + 1) / i / (i - 1);
+end
+for i = 2:101
+    subtracted = y[:,:,1:i] .- mean(y[:,:,1:i], dims=3);
+    tmp = mean(subtracted, dims=2)[:, 1, :];
+    sinty[i] = sum(tmp[1, :].^2 + tmp[2, :].^2) * (i + 1) / i / (i - 1);
+end
+for i = 2:101
+    subtracted = z[:,:,1:i] .- mean(z[:,:,1:i], dims=3);
+    tmp = mean(subtracted, dims=2)[:, 1, :];
+    sintz[i] = sum(tmp[1, :].^2 + tmp[2, :].^2) * (i + 1) / i / (i - 1);
+end
+
+p = plot(collect(2:101), sintv[2:101]./1e8, lw=4.0, lab="q = 0.3");
+plot!(collect(2:101), sintw[2:101]./1e8, lw=4.0, lab="q = 0.7");
+plot!(collect(2:101), sintz[2:101]./1e8, lw=4.0, lab="q = 1.0");
+plot!(collect(2:101), sintx[2:101]./1e8, lw=4.0, lab="q = 1.25");
+plot!(collect(2:101), sinty[2:101]./1e8, lw=4.0, lab="q = 1.5");
+ylims!(0, 5e-6);
+ylabel!("I(q-1.0) (A.U.)");
+xlabel!("# of Solvent Frames");
+title!("Estimated Intensity from Solvent Fluctuation");
+plot!(size=(600, 600), dpi=600, grid=false, legend=:topright, xtickfont=TICKS, ytickfont=TICKS, titlefont=TITLE, guidefont=GUIDE, legendfont=LEGEN, framestyle=:box)
+savefig(p, "solvent_fluctuation.png");
+savefig(p, "solvent_fluctuation.pdf");
+
+
+@time intensity = PDBSWAXS(joinpath(dir, "solute1.pdb"), buffers[1:5], collect(0.2:0.2:1.0); J = 1000);
+
 
 
 
