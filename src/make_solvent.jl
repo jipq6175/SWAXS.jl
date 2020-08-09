@@ -75,7 +75,7 @@ end
 # sticking everything (water and ions) within the solute envelope
 function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn::String)
 
-    @info("--- Making Solvent: Processing solute and bulk ...");
+    # @info("--- Making Solvent: Processing solute and bulk ...");
     soluteio = open(solutefn, "r");
     solutelines = readlines(soluteio);
     close(soluteio);
@@ -107,7 +107,7 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
 
     # define cutoff
     cutoff = 10.0 * pdf(MvNormal(zeros(3), Σ), [ξ; 0.0; 0.0]);
-    @info("--- Making Solvent: cutoff = $cutoff ...");
+    # @info("--- Making Solvent: cutoff = $cutoff ...");
 
     outputlines = Array{String, 1}(undef, 0);
     # get the waters from the solute frame
@@ -164,5 +164,40 @@ function make_solvent(solutefn::String, sourcefn::String, ξ::Float64, outputfn:
     end
     close(fout);
 
+    return nothing;
+end
+
+
+
+
+
+# function make solvent wrapper for pmap
+function make_solvent_for_parallel(dir::AbstractString, solutefn::AbstractString, solventfn::AbstractString, prefix::AbstractString; solventprefix::AbstractString="solvent", d::Float64=10.0)
+
+    @info("           -- Estimating solvent density using $solventfn ... ");
+    outputfn = joinpath(dir, replace(solventfn, prefix => solventprefix));
+    isfile(outputfn) ? @warn("$outputfn exists, skipped ... ") : make_solvent(solutefn, joinpath(dir, solventfn), d, outputfn);
+    return nothing;
+end
+
+
+
+# make_solvent batch in parallel mode
+function solvent_batch(dir::AbstractString, solutefn::AbstractString, sourceprefix::AbstractString; solventprefix::AbstractString="solvent", d::Float64=10.0)
+
+    filelist = readdir(dir);
+    filelist = filelist[endswith.(filelist, ".pdb")];
+
+    sourcelist = filelist[startswith.(filelist, sourceprefix)];
+    # solute = joinpath(dir, solutefn);
+
+
+    pmap(x -> make_solvent_for_parallel(dir, solutefn, x, sourceprefix; solventprefix=solventprefix, d=d), sourcelist, distributed=true);
+    # for i = 1:nsource
+    #     s = sourcelist[i];
+    #     @info("Making solvent using $s ... ");
+    #     outputfn = joinpath(dir, replace(s, sourceprefix => solventprefix));
+    #     isfile(outputfn) ? @warn("$outputfn exists, skipped ... ") : make_solvent(solute, joinpath(dir, s), d, outputfn);
+    # end
     return nothing;
 end
