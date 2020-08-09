@@ -1,6 +1,7 @@
 module SWAXS
 
-using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions, Dierckx, Optim
+using Distributed, DelimitedFiles, StatsBase, LinearAlgebra, Statistics, Distributions, Dates
+# using Dierckx, Optim
 
 const AVec = AbstractVector;
 const AMat = AbstractMatrix;
@@ -8,8 +9,9 @@ const AFloat = AbstractFloat;
 const AS = AbstractString;
 
 export mrc, mrc_reader, DenSWAXS
-export PDBSWAXS, SimplyPDB, chi2, optscale
-export make_solvent
+export PDBSWAXS, SimplyPDB
+# export chi2, optscale
+export make_solvent, solvent_batch
 export Voxel, readvox, ShapeSWAXS
 
 
@@ -18,7 +20,7 @@ include("pdbswaxs.jl");
 include("voxel.jl");
 include("parser.jl");
 include("make_solvent.jl");
-include("fitting.jl");
+# include("fitting.jl");
 
 # for building executable
 Base.@ccallable function julia_main()::Cint
@@ -76,6 +78,7 @@ Base.@ccallable function julia_main()::Cint
             @info("--- SWAXS: DARE mode ... ");
             @info("--- SWAXS: Processing bulk solvents ...");
             solventlist = joinpath.(bulkdir, readdir(bulkdir));
+            # parallel
             # solvent_batch(dir, solute, solventlist; solventprefix="tmp", d=envelope);
 
             @info("--- SWAXS: Computing SWAXS (J=$J) in DARE mode ... ");
@@ -84,6 +87,7 @@ Base.@ccallable function julia_main()::Cint
         else
             @warn("--- SWAXS: DARE mode found missing bulk directory ... ");
             return 1;
+        end
 
 
     # ShapeSWAXS using .binvox

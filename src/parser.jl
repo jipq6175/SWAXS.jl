@@ -50,6 +50,10 @@ function parse_commandline()
             help = "Distance between envelope and surface."
             arg_type = Float64
             default = 10.0;
+        "--prefix", "-p"
+            help = "Bulk prefix in the dir."
+            arg_type = String
+            default = "bulk"
         "--dare"
             help = "Making sure that you're actually doing it. Warning: It might take more than 10 hrs."
             action = :store_true
