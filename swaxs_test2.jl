@@ -31,14 +31,14 @@ end
 dir = "C:\\Users\\Yen-Lin\\Desktop\\solvent";
 
 # make solvent
-solvent_batch(dir, "solute.pdb", "frame"; solventprefix="solvent", d=10.0); 
+solvent_batch(dir, "solute.pdb", "frame"; solventprefix="solvent", d=2.0);
 
 # compute the buffer-subttracted
 filelist = readdir(dir);
-solventlist = joinpath.(dir, filelist[startswith.(solventlist, "solvent")]);
+solventlist = joinpath.(dir, filelist[startswith.(filelist, "solvent")]);
 q = collect(0.0:0.025:1.5);
 
 @info("Computing SWAXS ... ");
 @info("Starting Time: $(now())");
-@time intensity = PDBSWAXS(joinpath(dir, "solute.pdb"), solvent, q; J=1500);
-writedlm(joinpath(dir, "profile.dat"), [q intensity]);
+@time intensity = PDBSWAXS(joinpath(dir, "solute.pdb"), solventlist, q; J=1500);
+writedlm(joinpath(dir, "profile_d2.dat"), [q intensity]);

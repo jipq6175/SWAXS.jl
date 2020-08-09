@@ -35,6 +35,9 @@ Base.@ccallable function julia_main()::Cint
     pdb = args["pdb"];
     solute = args["solute"];
     solvent = args["solvent"];
+    bulkdir = args["bulkdir"];
+    envelope = args["envelope"];
+    dare = args["dare"];
     binvox = args["binvox"];
     solvent_density = args["solvent_density"];
     voxel_density = args["voxel_density"];
@@ -46,20 +49,45 @@ Base.@ccallable function julia_main()::Cint
     nprocs() > NPROCS ? rmprocs(workers()[end - (nprocs() - NPROCS) + 1: end]) : addprocs(NPROCS - nprocs());
 
     @info("--- SWAXS: Please wait ... ");
-    if !isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox)
+
+    # Density SWAXS using .mrc
+    if !isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox) && !dare
         @info("--- SWAXS: Computing SWAXS (J=$J) using electron density file: $density, with sden=$solvent_density cutoff=$density_cutoff. ");
         m = mrc_reader(density);
         t = @elapsed intensity = DenSWAXS(m, q; density_cutoff=density_cutoff, J=J, sden=solvent_density);
 
-    elseif isnothing(density) && !isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox)
+    # PDBSWAXS using 1 PDB
+    elseif isnothing(density) && !isnothing(pdb) && isnothing(solute) && isnothing(solvent) && isnothing(binvox) && !dare
         @info("--- SWAXS: Computing SWAXS (J=$J) using single PDB file: $pdb. ");
         t = @elapsed intensity = PDBSWAXS(pdb, q; J=J);
 
-    elseif isnothing(density) && isnothing(pdb) && !isnothing(solute) && !isnothing(solvent) && isnothing(binvox)
+    # PDBSWAXS using solute and solvent
+    elseif isnothing(density) && isnothing(pdb) && !isnothing(solute) && !isnothing(solvent) && isnothing(binvox) && !dare
         @info("--- SWAXS: Computing SWAXS (J=$J) using solute: $solute and solvent: $solvent. ");
-        t = @elapsed intensity = PDBSWAXS(solute, solvent, q; J=J);
+        @info("--- SWAXS: Processing solvent ... ");
+        outputfn = "tmp.pdb";
+        isfile(outputfn) ? @warn("--- SWAXS: $outputfn exists, parsing ... ") : make_solvent(solute, solvent, 2.0, outputfn);
+        t = @elapsed intensity = PDBSWAXS(solute, outputfn, q; J=J);
+        rm(outputfn);
 
-    elseif isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && !isnothing(binvox)
+    # dare
+    elseif isnothing(density) && isnothing(pdb) && !isnothing(solute) && isnothing(solvent) && isnothing(binvox) && dare
+        if !isnothing(bulkdir)
+            @info("--- SWAXS: DARE mode ... ");
+            @info("--- SWAXS: Processing bulk solvents ...");
+            solventlist = joinpath.(bulkdir, readdir(bulkdir));
+            # solvent_batch(dir, solute, solventlist; solventprefix="tmp", d=envelope);
+
+            @info("--- SWAXS: Computing SWAXS (J=$J) in DARE mode ... ");
+            # @time intensity = PDBSWAXS(solute, solventlist, q; J=J);
+
+        else
+            @warn("--- SWAXS: DARE mode found missing bulk directory ... ");
+            return 1;
+
+
+    # ShapeSWAXS using .binvox
+    elseif isnothing(density) && isnothing(pdb) && isnothing(solute) && isnothing(solvent) && !isnothing(binvox) && !dare
         @info("--- SWAXS: Computing SWAXS (J=$J) using shape file: $binvox, with voxel_density=$voxel_density, sden=$solvent_density.");
         v = readvox(binvox);
         t = @elapsed intensity = ShapeSWAXS(v, voxel_density, q; J=J, sd=solvent_density);
