@@ -1,7 +1,7 @@
 name = "SWAXS"
 uuid = "b44df5b0-b94a-4a54-9cc5-cedcd01dd1ca"
-authors = ["Yen-Lin Chen", "Cornell University"]
-version = "0.3.0"
+authors = ["Yen-Lin Chen"]
+version = "0.3.1"
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"

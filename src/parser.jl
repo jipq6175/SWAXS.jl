@@ -1,16 +1,16 @@
 # parser.jl
 
 
-using ArgParse, Distributed, DelimitedFiles
+using ArgParse
 
 function parse_commandline()
     s = ArgParseSettings()
     s.prog = "SWAXS";
-    s.description = "Small and Wide-Angle X-ray Scattering calculator for single atomic coordinates: .pdb, solute-solvent pair PDBs, electron density: .mrc or .map and voxelized 3D shape: .binvox. SWAXS uses Debye formula, orientational average and Park et al. to account for buffer subtraction and solvent shell. ";
+    s.description = "Small and Wide-Angle X-ray Scattering calculator for (a) single atomic coordinates: .pdb, (b) solute-solvent PDB pair for buffer subtraction, (c) electron density: .mrc or .map with implicit density model, (d) voxelized 3D shape: .binvox with uniform excessive electron density and (f) DARE mode for accurate bulk solvent modeling. SWAXS implements the Debye formula, orientational average and theory of excessive electron density to account for buffer subtraction, solvent shell and excluded volumes. ";
     s.preformatted_description = false;
-    s.epilog = "==============================================\nLast updated: 08/10/20, Ithaca, NY.\nCopyright (c) Yen-Lin Chen, 2018 - 2020\nEmail: yc2253@cornell.edu\n==============================================";
+    s.epilog = "===================================================================\n===             Last Update: 08/10/20, Ithaca, NY.              ===\n===           Copyright (c) Yen-Lin Chen, 2018 - 2020           ===\n===                Academic Free License v. 3.0                 ===\n===                 Email: yc2253@cornell.edu                   ===\n===================================================================";
     s.preformatted_epilog = true;
-    s.version = "0.3.0";
+    s.version = "0.3.1";
     s.add_version = true;
     s.add_help = true;
 
@@ -18,7 +18,7 @@ function parse_commandline()
 
         # densitySWAXS
         "--density", "-D"
-            help = "Electron density map file: .mrc or .map"
+            help = "CCP4 electron density map file: .mrc or .map"
             arg_type = String
         "--solvent_density", "-s"
             help = "The bulk solvent electron density in e/A^3"
@@ -36,26 +36,26 @@ function parse_commandline()
 
         # solute and solvent pair
         "--solute", "-T"
-            help = "The solute.pdb file"
+            help = "The solute.pdb file containing atomic coordinates of molecules, ions and solvents"
             arg_type = String
         "--solvent", "-V"
-            help = "The solvent.pdb file"
+            help = "The solvent.pdb file containing atomic coordinates of randomized bulk solvents"
             arg_type = String
 
         # md estimation of bulk solvent
         "--bulkdir", "-b"
-            help = "The directory containing bulk frames."
+            help = "The directory containing bulk frames; more than 50 frames are suggested or use --solute and --solvent"
             arg_type = String
         "--envelope", "-e"
-            help = "Distance between envelope and surface."
+            help = "Distance between the envelope and molecular surface, i.e. solvent layer width"
             arg_type = Float64
             default = 10.0;
         "--prefix", "-p"
-            help = "Bulk prefix in the dir."
+            help = "The .pdb file prefix in the --bulkdir"
             arg_type = String
             default = "bulk"
         "--dare"
-            help = "Making sure that you're actually doing it. Warning: It might take more than 10 hrs."
+            help = "Make sure that you're actually doing it!! Computing cluster suggested."
             action = :store_true
 
         # ShapeSWAXS
