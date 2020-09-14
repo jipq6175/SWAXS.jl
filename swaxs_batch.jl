@@ -79,7 +79,7 @@ function swaxs_batch(dir::AbstractString, q::AbstractVector; J::Signed=1500, sol
 end
 
 
-dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\TPXWAXS\\TripUAU_V1_200mMKCl";
+dir = "C:\\Users\\Yen-Lin\\Box Sync\\01_WorkData\\TPXWAXS\\Trip_minor";
 
 # q = collect(0.0:0.02:1.5);
 # solute = SimplyPDB(joinpath(dir, "frame1.pdb"));
